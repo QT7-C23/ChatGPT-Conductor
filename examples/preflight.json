@@ -1,0 +1,17 @@
+{
+  "project_id": "demo",
+  "task_id": "T1",
+  "packet_id": "EP-T1",
+  "packet_revision": 1,
+  "decision_version": 1,
+  "executor": "WORK",
+  "checked_capabilities": [
+    {
+      "capability": "files",
+      "available": true,
+      "evidence": "合成示例：执行端已确认可读写样例文件；实际使用必须替换"
+    }
+  ],
+  "recovery_conditions": [],
+  "lifecycle": 1
+}

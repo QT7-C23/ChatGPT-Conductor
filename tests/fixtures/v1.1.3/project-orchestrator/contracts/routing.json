@@ -1,0 +1,18 @@
+{
+  "states": ["DISCUSS", "PLAN", "READY_TO_EXECUTE", "EXECUTE", "REVIEW", "REVISE", "COMPLETE"],
+  "work_types": {"general": "WORK", "code": "CODEX", "mixed": "CHAT", "unknown": "CHAT"},
+  "events": {
+    "discuss": {"from": ["DISCUSS", "PLAN"], "to": "DISCUSS"},
+    "plan": {"from": ["DISCUSS", "PLAN"], "to": "PLAN"},
+    "replan": {"from": ["PLAN"], "to": "PLAN"},
+    "reauthorize": {"from": ["PLAN"], "to": "PLAN"},
+    "prepare": {"from": ["PLAN", "REVISE", "READY_TO_EXECUTE"], "to": "READY_TO_EXECUTE"},
+    "start": {"from": ["READY_TO_EXECUTE"], "to": "EXECUTE"},
+    "submit": {"from": ["EXECUTE"], "to": "REVIEW"},
+    "accept": {"from": ["REVIEW"], "to": "COMPLETE"},
+    "revise": {"from": ["REVIEW"], "to": "REVISE"},
+    "escalate": {"from": ["REVIEW"], "to": "PLAN"},
+    "challenge": {"from": ["DISCUSS", "PLAN", "READY_TO_EXECUTE", "EXECUTE", "REVIEW", "REVISE"], "to": "PLAN"},
+    "reopen": {"from": ["COMPLETE"], "to": "DISCUSS"}
+  }
+}

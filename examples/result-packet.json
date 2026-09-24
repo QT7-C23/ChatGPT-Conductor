@@ -1,0 +1,63 @@
+{
+  "schema_version": 2,
+  "project_id": "demo",
+  "task_id": "T1",
+  "packet_id": "EP-T1",
+  "packet_revision": 1,
+  "decision_version": 1,
+  "executor": "WORK",
+  "status": "succeeded",
+  "summary": "示例简报已生成，待 Chat 审核。",
+  "locked_decisions": [
+    {
+      "id": "D1",
+      "decision": "只生成本地交付文件，不对外发布。",
+      "rationale": "先完成内部审核。",
+      "approval_ref": "示例：用户确认范围，第 1 轮"
+    }
+  ],
+  "open_decisions_resolved": [
+    {
+      "id": "O1",
+      "choice": "背景、结论、下一步",
+      "rationale": "与输入的阅读顺序一致"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "A1",
+      "ref": "summary.md",
+      "description": "示例交付物；不是本项目真实运行证据"
+    }
+  ],
+  "checks": [
+    {
+      "criterion_id": "AC1",
+      "status": "passed",
+      "evidence": "示例核对记录：summary.md 三个结论均对应 brief.md；真实使用时须替换"
+    }
+  ],
+  "challenges": [],
+  "limitations": [],
+  "capability_preflight": {
+    "project_id": "demo",
+    "task_id": "T1",
+    "packet_id": "EP-T1",
+    "packet_revision": 1,
+    "decision_version": 1,
+    "executor": "WORK",
+    "checked_capabilities": [
+      {
+        "capability": "files",
+        "available": true,
+        "evidence": "合成示例：执行端已确认可读写样例文件；实际使用必须替换"
+      }
+    ],
+    "recovery_conditions": [],
+    "lifecycle": 1
+  },
+  "missing_capabilities": [],
+  "recovery_conditions": [],
+  "side_effects_performed": [],
+  "lifecycle": 1
+}

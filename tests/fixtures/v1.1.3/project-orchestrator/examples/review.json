@@ -1,0 +1,31 @@
+{
+  "schema_version": 2,
+  "review_id": "CR-T1-1",
+  "project_id": "demo",
+  "task_id": "T1",
+  "packet_id": "EP-T1",
+  "packet_revision": 1,
+  "decision_version": 1,
+  "executor": "WORK",
+  "reviewer": "CHAT",
+  "acceptance_results": [
+    {
+      "criterion_id": "AC1",
+      "status": "passed",
+      "evidence": "示例核对记录：summary.md 三个结论均对应 brief.md；真实使用时须替换"
+    }
+  ],
+  "locked_decision_compliance": [
+    {
+      "decision_id": "D1",
+      "status": "compliant",
+      "evidence": "合成示例：本地文件符合交付范围，实际使用须检查"
+    }
+  ],
+  "verdict": "ACCEPT",
+  "revision_instructions": [],
+  "evidence": "合成示例：Chat 已逐项检查，非真实审核证明",
+  "lifecycle": 1,
+  "result_sha256": "171c86de93eb8fe4b2350a9f498c5232ac789467603ee8b1538418236a1fec8f",
+  "supersedes_review_id": null
+}

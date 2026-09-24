@@ -1,0 +1,38 @@
+{
+  "snapshot": {
+    "schema_version": 1,
+    "project_id": "demo",
+    "revision": 1,
+    "state": "PLAN",
+    "decision_version": 1,
+    "locked_decisions": [
+      {
+        "id": "D1",
+        "decision": "只生成本地交付文件，不对外发布。",
+        "rationale": "先完成内部审核。",
+        "approval_ref": "示例：用户确认范围，第 1 轮"
+      }
+    ],
+    "open_decisions": [
+      {
+        "id": "O1",
+        "question": "交付文档的章节顺序",
+        "owner": "EXECUTOR",
+        "blocking": false
+      }
+    ],
+    "active_packet": null,
+    "escalations": []
+  },
+  "packet": null,
+  "result": null,
+  "review": null,
+  "confirmation": {
+    "source_kind": "user_instruction",
+    "approval_ref": "合成样例：用户批准格式迁移",
+    "executor_stopped": true,
+    "effects_reconciled": true,
+    "evidence_ref": "合成样例：无活动任务，无副作用",
+    "pending_revision_instructions": []
+  }
+}

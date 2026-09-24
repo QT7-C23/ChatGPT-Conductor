@@ -1,0 +1,155 @@
+{
+  "snapshot": {
+    "schema_version": 2,
+    "project_id": "demo",
+    "revision": 1,
+    "state": "PLAN",
+    "decision_version": 1,
+    "locked_decisions": [
+      {
+        "id": "D1",
+        "decision": "只生成本地交付文件，不对外发布。",
+        "rationale": "先完成内部审核。",
+        "approval_ref": "示例：用户确认范围，第 1 轮"
+      }
+    ],
+    "open_decisions": [
+      {
+        "id": "O1",
+        "question": "交付文档的章节顺序",
+        "owner": "EXECUTOR",
+        "blocking": false
+      }
+    ],
+    "active_packet": null,
+    "escalations": [],
+    "review_record": null,
+    "result_sha256": null,
+    "lifecycle": 1,
+    "revision_reviews": [],
+    "plan_approvals": [],
+    "migration_record": null
+  },
+  "event": "prepare",
+  "work_type": "general",
+  "packet": {
+    "schema_version": 2,
+    "project_id": "demo",
+    "task_id": "T1",
+    "packet_id": "EP-T1",
+    "packet_revision": 1,
+    "decision_version": 1,
+    "executor": "WORK",
+    "work_type": "general",
+    "goal": "把已确认材料整理为项目简报。",
+    "scope": {
+      "in": [
+        "整理已提供材料",
+        "输出简报"
+      ],
+      "out": [
+        "新增未经证实的市场数据",
+        "对外发布"
+      ]
+    },
+    "inputs": [
+      {
+        "ref": "brief.md",
+        "description": "已确认的项目资料",
+        "available": true
+      }
+    ],
+    "deliverables": [
+      {
+        "id": "A1",
+        "description": "summary.md 项目简报"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "AC1",
+        "criterion": "简报逐项覆盖输入中的三个结论",
+        "verify": "对照 brief.md 三个结论进行人工逐项核对"
+      }
+    ],
+    "locked_decisions": [
+      {
+        "id": "D1",
+        "decision": "只生成本地交付文件，不对外发布。",
+        "rationale": "先完成内部审核。",
+        "approval_ref": "示例：用户确认范围，第 1 轮"
+      }
+    ],
+    "open_decisions": [
+      {
+        "id": "O1",
+        "question": "交付文档的章节顺序",
+        "owner": "EXECUTOR",
+        "blocking": false
+      }
+    ],
+    "authorization": {
+      "status": "granted",
+      "source": "示例：用户明确要求生成简报，第 2 轮",
+      "source_kind": "user_instruction"
+    },
+    "dependencies": [],
+    "required_capabilities": [
+      "files"
+    ],
+    "revision_instructions": [],
+    "known_capabilities": [
+      "files"
+    ],
+    "capability_preflight_required": false,
+    "side_effects": {
+      "allowed": [
+        {
+          "action": "local_files_write",
+          "target": "summary.md",
+          "authorization_ref": "示例：用户要求生成本地简报，第 2 轮"
+        }
+      ],
+      "require_escalation": [
+        {
+          "action": "repository_modify",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "email_send",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "pr_create",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "deploy",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "data_delete",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "external_send",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        }
+      ],
+      "forbidden": [
+        {
+          "action": "production_modify",
+          "target": "*",
+          "reason": "示例：禁止修改生产系统"
+        }
+      ]
+    },
+    "lifecycle": 1
+  }
+}

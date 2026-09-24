@@ -1,0 +1,131 @@
+{
+  "name": "approve-release",
+  "on": {
+    "workflow_dispatch": {
+      "inputs": {
+        "purpose": {
+          "description": "Separate human approval purpose",
+          "required": true,
+          "type": "choice",
+          "options": [
+            "candidate",
+            "publish"
+          ]
+        },
+        "packet": {
+          "description": "Exact reviewed approval packet JSON; publish requires final ACCEPT and distinct publish approval",
+          "required": true,
+          "type": "string"
+        }
+      }
+    }
+  },
+  "permissions": {
+    "contents": "read",
+    "actions": "read"
+  },
+  "jobs": {
+    "candidate": {
+      "if": "${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && inputs.purpose == 'candidate' }}",
+      "runs-on": "ubuntu-latest",
+      "permissions": {
+        "contents": "read",
+        "actions": "read"
+      },
+      "environment": "release-candidate-approval",
+      "steps": [
+        {
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "ref": "${{ github.sha }}",
+            "path": "trusted",
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24",
+            "package-manager-cache": false
+          }
+        },
+        {
+          "run": "npm ci --ignore-scripts",
+          "working-directory": "trusted"
+        },
+        {
+          "name": "Gate approve",
+          "run": "node scripts/release-workflow.mjs approve",
+          "working-directory": "trusted",
+          "env": {
+            "GH_TOKEN": "${{ github.token }}",
+            "RELEASE_CONFIG_TOKEN": "${{ secrets.RELEASE_CONFIG_TOKEN }}",
+            "APPROVAL_PURPOSE": "candidate",
+            "APPROVAL_PACKET": "${{ inputs.packet }}"
+          }
+        },
+        {
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "approval",
+            "path": "trusted/approval-output/approval.json",
+            "if-no-files-found": "error",
+            "overwrite": false,
+            "archive": true
+          }
+        }
+      ]
+    },
+    "publish": {
+      "if": "${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && inputs.purpose == 'publish' }}",
+      "runs-on": "ubuntu-latest",
+      "permissions": {
+        "contents": "read",
+        "actions": "read"
+      },
+      "environment": "release-publish",
+      "steps": [
+        {
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "ref": "${{ github.sha }}",
+            "path": "trusted",
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24",
+            "package-manager-cache": false
+          }
+        },
+        {
+          "run": "npm ci --ignore-scripts",
+          "working-directory": "trusted"
+        },
+        {
+          "name": "Gate approve",
+          "run": "node scripts/release-workflow.mjs approve",
+          "working-directory": "trusted",
+          "env": {
+            "GH_TOKEN": "${{ github.token }}",
+            "RELEASE_CONFIG_TOKEN": "${{ secrets.RELEASE_CONFIG_TOKEN }}",
+            "APPROVAL_PURPOSE": "publish",
+            "APPROVAL_PACKET": "${{ inputs.packet }}"
+          }
+        },
+        {
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "approval",
+            "path": "trusted/approval-output/approval.json",
+            "if-no-files-found": "error",
+            "overwrite": false,
+            "archive": true
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "node_modules/buffer-crc32/package.json": "938f1de0f2ad17d651a4e6f981b3ba56ab47b3c1ec18378d1504dd63fadb70d0",
+  "node_modules/buffer-crc32/LICENSE": "ddc9158fa20e427bc12fa8e1e6d07c642ed4d2c618607df768b30ae2986b3b7c",
+  "node_modules/buffer-crc32/dist/index.cjs": "f6f07fba44d572f4290a306300707ca0ca813199c97b81aa87e7b762bfcc721f",
+  "node_modules/buffer-crc32/dist/index.mjs": "48f61c4f14f74ca6d54fd69311c0edaa1d65d553efa134c4d43708263384ac6e",
+  "node_modules/pend/package.json": "1e4f01d39cc13c261f7ab81d0509d36bd98d8eceaf9ed75f2ab274286f3c3920",
+  "node_modules/pend/LICENSE": "7e64acffcb0d20d33f5a86949ffd4a99ae045b10c7332a9c3a58635876c16880",
+  "node_modules/pend/index.js": "4b991290680d9027dd786493c6e816900355956d88afb6ae4d97b5ac5a3ee0f5",
+  "node_modules/yauzl/package.json": "d7d5418b74b185df4ad276b73cf1e36040dd417d22520354e609e2748a29fcbd",
+  "node_modules/yauzl/LICENSE": "b303783d5eb7ca50b853ffa5f145e4e7998fab339831d848f507ca6cd970577a",
+  "node_modules/yauzl/index.js": "8cccdd25e8bb5516572c09072324876860c8de5898c0b8b7070f0e660b35a0ec",
+  "node_modules/yauzl/crc32.js": "7bf6476c8e4984418943aa4eb6743c859d723d5e9a7278d61d34457d2554cec4",
+  "node_modules/yauzl/fd-slicer.js": "fa8868a9879ce50db8cbec36d487424af112bd5b0c433831968441ec50d7616a",
+  "node_modules/yazl/package.json": "7b6bb328a96f05a975445488ccd166bfe2de2988fc6d9929045eb9eafdfaee28",
+  "node_modules/yazl/LICENSE": "b303783d5eb7ca50b853ffa5f145e4e7998fab339831d848f507ca6cd970577a",
+  "node_modules/yazl/index.js": "73c9e5b6c10dea1892f13f4180be0c11b061b5d60f9937dd4f5cae6a47ec36c2"
+}

@@ -1,0 +1,102 @@
+{
+  "name": "verify-published",
+  "on": {
+    "workflow_dispatch": {
+      "inputs": {
+        "candidate_commit": {
+          "description": "Exact reviewed 40-hex candidate source SHA",
+          "required": true,
+          "type": "string"
+        },
+        "candidate_run": {
+          "description": "Successful package-candidate run ID",
+          "required": true,
+          "type": "string"
+        },
+        "candidate_artifact": {
+          "description": "Exact candidate artifact ID",
+          "required": true,
+          "type": "string"
+        },
+        "candidate_digest": {
+          "description": "Candidate artifact archive SHA256",
+          "required": true,
+          "type": "string"
+        },
+        "approval_run": {
+          "description": "Successful approve-release run ID",
+          "required": true,
+          "type": "string"
+        },
+        "approval_artifact": {
+          "description": "Exact human approval artifact ID",
+          "required": true,
+          "type": "string"
+        },
+        "approval_digest": {
+          "description": "Human approval artifact archive SHA256",
+          "required": true,
+          "type": "string"
+        },
+        "draft_id": {
+          "description": "Exact draft release ID in final ACCEPT and publish approval",
+          "required": true,
+          "type": "string"
+        }
+      }
+    }
+  },
+  "permissions": {
+    "contents": "read",
+    "actions": "read"
+  },
+  "jobs": {
+    "verify": {
+      "if": "${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}",
+      "runs-on": "ubuntu-latest",
+      "environment": "release-publish",
+      "permissions": {
+        "contents": "read",
+        "actions": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "ref": "${{ github.sha }}",
+            "path": "trusted",
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24",
+            "package-manager-cache": false
+          }
+        },
+        {
+          "run": "npm ci --ignore-scripts",
+          "working-directory": "trusted"
+        },
+        {
+          "name": "Gate verify-published",
+          "run": "node scripts/release-workflow.mjs verify-published",
+          "working-directory": "trusted",
+          "env": {
+            "CANDIDATE_COMMIT": "${{ inputs.candidate_commit }}",
+            "CANDIDATE_RUN": "${{ inputs.candidate_run }}",
+            "CANDIDATE_ARTIFACT": "${{ inputs.candidate_artifact }}",
+            "CANDIDATE_DIGEST": "${{ inputs.candidate_digest }}",
+            "APPROVAL_RUN": "${{ inputs.approval_run }}",
+            "APPROVAL_ARTIFACT": "${{ inputs.approval_artifact }}",
+            "APPROVAL_DIGEST": "${{ inputs.approval_digest }}",
+            "GH_TOKEN": "${{ github.token }}",
+            "RELEASE_CONFIG_TOKEN": "${{ secrets.RELEASE_CONFIG_TOKEN }}",
+            "DRAFT_ID": "${{ inputs.draft_id }}"
+          }
+        }
+      ]
+    }
+  }
+}

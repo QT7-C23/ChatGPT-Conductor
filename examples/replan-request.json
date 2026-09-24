@@ -1,0 +1,172 @@
+{
+  "snapshot": {
+    "schema_version": 2,
+    "project_id": "demo",
+    "revision": 3,
+    "state": "PLAN",
+    "decision_version": 1,
+    "locked_decisions": [
+      {
+        "id": "D1",
+        "decision": "只生成本地交付文件，不对外发布。",
+        "rationale": "先完成内部审核。",
+        "approval_ref": "示例：用户确认范围，第 1 轮"
+      }
+    ],
+    "open_decisions": [
+      {
+        "id": "O1",
+        "question": "交付文档的章节顺序",
+        "owner": "EXECUTOR",
+        "blocking": false
+      }
+    ],
+    "active_packet": {
+      "packet_id": "EP-T1",
+      "packet_revision": 1,
+      "task_id": "T1",
+      "content_sha256": "70b54679355d68fa9b88ed07a22dd93ad81cdb056e4be8f22834c920563a1c2c",
+      "decision_version": 1,
+      "locked_decisions_sha256": "0a57e2c3db9268568ff49b5acd2608091a419763d6413cee5071ff8fe395b684",
+      "lifecycle": 1,
+      "boundary_sha256": "dde442a4a0ae8984e9689b992b6a131e21cf697e2e61bc791d626e46713d3943"
+    },
+    "escalations": [],
+    "review_record": null,
+    "result_sha256": null,
+    "lifecycle": 1,
+    "revision_reviews": [],
+    "plan_approvals": [],
+    "migration_record": null
+  },
+  "event": "replan",
+  "work_type": "general",
+  "packet": {
+    "schema_version": 2,
+    "project_id": "demo",
+    "task_id": "T1",
+    "packet_id": "EP-T1",
+    "packet_revision": 2,
+    "decision_version": 1,
+    "executor": "WORK",
+    "work_type": "general",
+    "goal": "把已确认材料整理为项目简报。（明确批准的范围调整）",
+    "scope": {
+      "in": [
+        "整理已提供材料",
+        "输出简报"
+      ],
+      "out": [
+        "新增未经证实的市场数据",
+        "对外发布"
+      ]
+    },
+    "inputs": [
+      {
+        "ref": "brief.md",
+        "description": "已确认的项目资料",
+        "available": true
+      }
+    ],
+    "deliverables": [
+      {
+        "id": "A1",
+        "description": "summary.md 项目简报"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "AC1",
+        "criterion": "简报逐项覆盖输入中的三个结论",
+        "verify": "对照 brief.md 三个结论进行人工逐项核对"
+      }
+    ],
+    "locked_decisions": [
+      {
+        "id": "D1",
+        "decision": "只生成本地交付文件，不对外发布。",
+        "rationale": "先完成内部审核。",
+        "approval_ref": "示例：用户确认范围，第 1 轮"
+      }
+    ],
+    "open_decisions": [
+      {
+        "id": "O1",
+        "question": "交付文档的章节顺序",
+        "owner": "EXECUTOR",
+        "blocking": false
+      }
+    ],
+    "authorization": {
+      "status": "granted",
+      "source": "示例：用户明确要求生成简报，第 2 轮",
+      "source_kind": "user_instruction"
+    },
+    "dependencies": [],
+    "required_capabilities": [
+      "files"
+    ],
+    "revision_instructions": [],
+    "known_capabilities": [
+      "files"
+    ],
+    "capability_preflight_required": false,
+    "side_effects": {
+      "allowed": [
+        {
+          "action": "local_files_write",
+          "target": "summary.md",
+          "authorization_ref": "示例：用户要求生成本地简报，第 2 轮"
+        }
+      ],
+      "require_escalation": [
+        {
+          "action": "repository_modify",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "email_send",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "pr_create",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "deploy",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "data_delete",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "external_send",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        }
+      ],
+      "forbidden": [
+        {
+          "action": "production_modify",
+          "target": "*",
+          "reason": "示例：禁止修改生产系统"
+        }
+      ]
+    },
+    "lifecycle": 1
+  },
+  "approval": {
+    "reviewer": "CHAT",
+    "source_kind": "user_instruction",
+    "approval_ref": "合成样例：用户明确批准新目标",
+    "from_packet_sha256": "70b54679355d68fa9b88ed07a22dd93ad81cdb056e4be8f22834c920563a1c2c",
+    "to_packet_sha256": "8c4497939096724b3b1c7f2e44a652f8535e41642929f64696a5d8309948a9ff",
+    "replaces_review_id": null
+  }
+}

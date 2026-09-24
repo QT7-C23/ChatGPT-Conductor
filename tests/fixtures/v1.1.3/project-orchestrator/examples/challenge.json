@@ -1,0 +1,18 @@
+{
+  "project_id": "demo",
+  "task_id": "T1",
+  "packet_id": "EP-T1",
+  "packet_revision": 1,
+  "decision_version": 1,
+  "executor": "WORK",
+  "blocking": true,
+  "decision_id": "D1",
+  "reason": "合成示例：输入要求发布，与当前锁定范围冲突",
+  "evidence": "示例输入中的发布要求；真实使用须填写实际位置",
+  "proposal": "请 Chat 核查并维持当前本地交付范围",
+  "impact": "暂停受影响的发布步骤",
+  "affected_tasks": [
+    "T1"
+  ],
+  "lifecycle": 1
+}

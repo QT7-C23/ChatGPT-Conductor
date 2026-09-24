@@ -1,0 +1,184 @@
+{
+  "snapshot": {
+    "schema_version": 2,
+    "project_id": "demo",
+    "revision": 2,
+    "state": "PLAN",
+    "decision_version": 1,
+    "locked_decisions": [
+      {
+        "id": "D1",
+        "decision": "只生成本地交付文件，不对外发布。",
+        "rationale": "先完成内部审核。",
+        "approval_ref": "示例：用户确认范围，第 1 轮"
+      }
+    ],
+    "open_decisions": [
+      {
+        "id": "O1",
+        "question": "交付文档的章节顺序",
+        "owner": "EXECUTOR",
+        "blocking": false
+      }
+    ],
+    "lifecycle": 2,
+    "active_packet": null,
+    "escalations": [],
+    "review_record": null,
+    "result_sha256": null,
+    "revision_reviews": [],
+    "plan_approvals": [],
+    "migration_record": {
+      "source_schema": 1,
+      "source_state": "PLAN",
+      "source_sha256": "7e8a8eb7317b28c95607c10dceae4badfdafd2db048b7283d2ae850e3a318847",
+      "packet_sha256": null,
+      "result_sha256": null,
+      "review_sha256": null,
+      "source_kind": "user_instruction",
+      "approval_ref": "合成样例：用户批准格式迁移",
+      "evidence_ref": "合成样例：无活动任务，无副作用",
+      "authorization_inherited": false,
+      "target_lifecycle": 2,
+      "pending_revision_instructions": []
+    }
+  },
+  "event": "reauthorize",
+  "work_type": "general",
+  "packet": {
+    "schema_version": 2,
+    "project_id": "demo",
+    "task_id": "T1",
+    "packet_id": "EP-T1",
+    "packet_revision": 1,
+    "decision_version": 1,
+    "executor": "WORK",
+    "work_type": "general",
+    "goal": "把已确认材料整理为项目简报。",
+    "scope": {
+      "in": [
+        "整理已提供材料",
+        "输出简报"
+      ],
+      "out": [
+        "新增未经证实的市场数据",
+        "对外发布"
+      ]
+    },
+    "inputs": [
+      {
+        "ref": "brief.md",
+        "description": "已确认的项目资料",
+        "available": true
+      }
+    ],
+    "deliverables": [
+      {
+        "id": "A1",
+        "description": "summary.md 项目简报"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "AC1",
+        "criterion": "简报逐项覆盖输入中的三个结论",
+        "verify": "对照 brief.md 三个结论进行人工逐项核对"
+      }
+    ],
+    "locked_decisions": [
+      {
+        "id": "D1",
+        "decision": "只生成本地交付文件，不对外发布。",
+        "rationale": "先完成内部审核。",
+        "approval_ref": "示例：用户确认范围，第 1 轮"
+      }
+    ],
+    "open_decisions": [
+      {
+        "id": "O1",
+        "question": "交付文档的章节顺序",
+        "owner": "EXECUTOR",
+        "blocking": false
+      }
+    ],
+    "authorization": {
+      "status": "granted",
+      "source": "示例：用户明确要求生成简报，第 2 轮",
+      "source_kind": "user_instruction"
+    },
+    "dependencies": [],
+    "required_capabilities": [
+      "files"
+    ],
+    "revision_instructions": [],
+    "known_capabilities": [
+      "files"
+    ],
+    "capability_preflight_required": false,
+    "side_effects": {
+      "allowed": [
+        {
+          "action": "local_files_write",
+          "target": "summary.md",
+          "authorization_ref": "示例：用户要求生成本地简报，第 2 轮"
+        }
+      ],
+      "require_escalation": [
+        {
+          "action": "repository_modify",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "email_send",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "pr_create",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "deploy",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "data_delete",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        },
+        {
+          "action": "external_send",
+          "target": "*",
+          "reason": "示例：本任务尚未授权此类动作"
+        }
+      ],
+      "forbidden": [
+        {
+          "action": "production_modify",
+          "target": "*",
+          "reason": "示例：禁止修改生产系统"
+        }
+      ]
+    },
+    "lifecycle": 2
+  },
+  "approval": {
+    "reviewer": "CHAT",
+    "source_kind": "user_instruction",
+    "approval_ref": "合成示例：Chat 已核对用户对迁移后完整包的新授权",
+    "approval_id": "EA-DEMO-L2-P1",
+    "project_id": "demo",
+    "task_id": "T1",
+    "packet_id": "EP-T1",
+    "packet_revision": 1,
+    "decision_version": 1,
+    "executor": "WORK",
+    "lifecycle": 2,
+    "from_packet_sha256": null,
+    "to_packet_sha256": "407db2f841e68646c2060455ca0f31a7dc8dc2c383ca4c5681aa6903e7ea1ed1",
+    "replaces_review_id": null
+  }
+}

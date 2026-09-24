@@ -1,0 +1,4 @@
+interface:
+  display_name: "ChatGPT Conductor"
+  short_description: "在 Chat、Work 与 Codex 间交接项目，保留决策与验收证据"
+  default_prompt: "使用 $chatgpt-conductor 继续当前项目，判断阶段与下一站，并准备必要的交接包。"

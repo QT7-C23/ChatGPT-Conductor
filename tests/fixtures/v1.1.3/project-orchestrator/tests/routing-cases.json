@@ -1,0 +1,128 @@
+[
+  {
+    "id": "R01",
+    "prompt": "讨论一个 API 方案是否合适",
+    "state": "DISCUSS",
+    "event": "discuss",
+    "work_type": "code",
+    "expected_state": "DISCUSS",
+    "surface": "CHAT"
+  },
+  {
+    "id": "R02",
+    "prompt": "先拆解简报任务，不开始制作",
+    "state": "DISCUSS",
+    "event": "plan",
+    "work_type": "general",
+    "expected_state": "PLAN",
+    "surface": "CHAT"
+  },
+  {
+    "id": "R03",
+    "prompt": "材料和授权齐全，交 Work 制作简报",
+    "state": "PLAN",
+    "event": "prepare",
+    "work_type": "general",
+    "expected_state": "READY_TO_EXECUTE",
+    "surface": "WORK"
+  },
+  {
+    "id": "R04",
+    "prompt": "已批准的仓库修复交 Codex",
+    "state": "PLAN",
+    "event": "prepare",
+    "work_type": "code",
+    "expected_state": "READY_TO_EXECUTE",
+    "surface": "CODEX"
+  },
+  {
+    "id": "R05",
+    "prompt": "Work 接收已就绪任务包",
+    "state": "READY_TO_EXECUTE",
+    "event": "start",
+    "work_type": "general",
+    "expected_state": "EXECUTE",
+    "surface": "WORK"
+  },
+  {
+    "id": "R06",
+    "prompt": "执行者提交交付物与证据",
+    "state": "EXECUTE",
+    "event": "submit",
+    "work_type": "general",
+    "expected_state": "REVIEW",
+    "surface": "CHAT"
+  },
+  {
+    "id": "R07",
+    "prompt": "Chat 审核通过才完成",
+    "state": "REVIEW",
+    "event": "accept",
+    "work_type": "general",
+    "expected_state": "COMPLETE",
+    "surface": "CHAT"
+  },
+  {
+    "id": "R08",
+    "prompt": "Chat 要求在原范围内修改",
+    "state": "REVIEW",
+    "event": "revise",
+    "work_type": "general",
+    "expected_state": "REVISE",
+    "surface": "WORK"
+  },
+  {
+    "id": "R09",
+    "prompt": "修订任务包重新进入就绪状态",
+    "state": "REVISE",
+    "event": "prepare",
+    "work_type": "general",
+    "expected_state": "READY_TO_EXECUTE",
+    "surface": "WORK"
+  },
+  {
+    "id": "R10",
+    "prompt": "执行模型质疑锁定决策",
+    "state": "EXECUTE",
+    "event": "challenge",
+    "work_type": "general",
+    "expected_state": "PLAN",
+    "surface": "CHAT"
+  },
+  {
+    "id": "R11",
+    "prompt": "完成后有新需求，重新讨论",
+    "state": "COMPLETE",
+    "event": "reopen",
+    "work_type": "general",
+    "expected_state": "DISCUSS",
+    "surface": "CHAT"
+  },
+  {
+    "id": "R12",
+    "prompt": "Chat 审核需要升级决策分歧",
+    "state": "REVIEW",
+    "event": "escalate",
+    "work_type": "general",
+    "expected_state": "PLAN",
+    "surface": "CHAT"
+  },
+  {
+    "id": "R13",
+    "prompt": "Chat 在 PLAN 明确批准绑定新包的重新规划",
+    "state": "PLAN",
+    "event": "replan",
+    "work_type": "general",
+    "expected_state": "PLAN",
+    "surface": "CHAT"
+  },
+  {
+    "id": "R14",
+    "prompt": "Chat 为迁移后的完整执行包签发新的执行批准",
+    "state": "PLAN",
+    "event": "reauthorize",
+    "work_type": "general",
+    "expected_state": "PLAN",
+    "surface": "CHAT"
+  }
+]
