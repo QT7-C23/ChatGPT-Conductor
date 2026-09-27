@@ -14,6 +14,9 @@ const signals = Object.freeze({
   ENVIRONMENT_FAILURE: 'TOOL_OR_ENVIRONMENT',
   PERMISSION_DENIED: 'TOOL_OR_ENVIRONMENT',
   TEST_SPEC_CONFLICT: 'TEST_OR_SPEC_CONFLICT',
+  REGISTRY_STALE: 'UNKNOWN',
+  REGISTRY_UNKNOWN: 'UNKNOWN',
+  MODEL_UNAVAILABLE: 'TOOL_OR_ENVIRONMENT',
 });
 const checks = ['SPEC_CLEAR', 'ENVIRONMENT_HEALTHY'];
 const actions = Object.freeze({
@@ -49,10 +52,11 @@ function validateEvidence(evidence) {
 }
 
 function classify(evidence) {
-  const categories = new Set(evidence.map(item => signals[item.signal]).filter(Boolean));
+  const categories = new Set(evidence.map(item => signals[item.signal]).filter(value => value && value !== 'UNKNOWN'));
   const has = signal => evidence.some(item => item.signal === signal);
   const capabilityReady = has('REPEATED_CONSTRAINT_FAILURE') && has('SPEC_CLEAR') && has('ENVIRONMENT_HEALTHY');
-  if (categories.has('CAPABILITY_LIMIT') && !capabilityReady) categories.delete('CAPABILITY_LIMIT');
+  if (categories.has('CAPABILITY_LIMIT') && (!capabilityReady || has('REGISTRY_STALE') || has('REGISTRY_UNKNOWN')))
+    categories.delete('CAPABILITY_LIMIT');
   const category = categories.size === 1 ? [...categories][0] : 'UNKNOWN';
   const supporting = category === 'UNKNOWN' ? evidence : evidence.filter(item => signals[item.signal] === category ||
     (category === 'CAPABILITY_LIMIT' && checks.includes(item.signal)));

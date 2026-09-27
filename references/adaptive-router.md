@@ -1,5 +1,7 @@
 # Adaptive Model Router Core（M3）
 
+M6 可用 `resolveRoutingCandidates` 把已校验的抽象推荐映射到 [Registry](model-capability-registry.md) 的候选。解析结果与具体 ID 留在 Packet 和 `RoutingRecommendationV1` 外；已绑定的 `basis.registry_evidence_digest` 必须匹配所选快照。没有 Registry 的旧 schema-2 路径继续合法。
+
 `scripts/adaptive-router.mjs` 的 `recommendRouting` 接收宿主已整理的 `binding`、`basis`、`profile`、`checkpoint`，返回 `contract=RoutingRecommendationV1, version=1` 的 Packet 外附件。机器消费或缓存前用 `validateRoutingRecommendation` 并传入预期 binding/basis；继承记录还需提供前一条推荐。校验器检查结构和适用依据，宿主须核对证据真实性。推荐不改 `schema_version=2` 的 Packet、`packet_revision`、required_capabilities、授权或 ProjectState。
 
 ## 输入与推荐合同

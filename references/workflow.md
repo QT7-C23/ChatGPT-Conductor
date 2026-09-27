@@ -1,10 +1,16 @@
 # 路由、决策与恢复
 
+具体模型候选按 [ModelCapabilityRegistryV1](model-capability-registry.md) 解析离线证据与本次宿主 runtime overlay；unknown/stale/unavailable 只要求按需补证据或恢复环境，不能推成能力不足或自动升级。候选仍在 Packet 外，不改授权或 revision，也不声称已切换。
+
+显式 Eval 或已开启的被动采集可按 [RoutingEvalRecordV1](routing-eval.md) 在结果形成后离线摘取已有证据。缺 Eval 记录不阻塞 REVIEW/COMPLETE；Eval 不能改变七阶段、批准、模型选择或 Registry 事实。
+
 ## 任务分类
 
 对目标、用户、范围或关键取舍尚不明确的产品请求，先用 [Product Workshop](workshop.md) 在 DISCUSS/PLAN 完成发现；明确小任务直接分类和路由。ready Product Brief 可供 PLAN 使用，但不替代本文件的 prepare、授权、版本或恢复规则。
 
-能力推荐可在 workshop、research escalation、pre-execution、failure reassessment、review 或 significant replan 时按需重新判断；这些是 checkpoint，不是新阶段或状态事件。先核对上次推荐的任务绑定、profile、scope/task 摘要以及 runtime capability、policy、registry evidence 摘要；仍适用时继承。简单明确任务走本地 Fast Path，复杂或信号冲突任务走本地保守规则并如实降低 confidence；两者均不发额外模型请求。运行中若已有独立证据需要提升能力，先建议提高 reasoning，再建议提高 Tier；本模块不判断失败归因或实际宿主支持。资源偏好按 [ResourcePolicyV1](resource-policy.md) 在推荐后独立决策，不替代现有执行授权。
+能力推荐可在 workshop、research escalation、pre-execution、failure reassessment、review 或 significant replan 时按需重新判断；这些是 checkpoint，不是新阶段或状态事件。只在当前步骤确实需要能力决策时调用：Workshop 尚在澄清产品范围时不提前运行 Router；ready Brief 进入 PLAN 后，通常在拟议 Packet 的 pre-execution checkpoint 判断一次，不在 Workshop 和 PLAN 对同一事实重复判断。若 Workshop 中已为明确的独立步骤形成建议，包前 draft 记录不能直接用于正式 Packet；包身份确定后按当前绑定校验并形成适用记录。先核对上次推荐的任务绑定、profile、scope/task 摘要以及 runtime capability、policy、registry evidence 摘要；仍适用时继承，无实质变化不再次分析。简单明确任务走本地 Fast Path，复杂或信号冲突任务走本地保守规则并如实降低 confidence；两者均不发额外模型请求。运行中若已有独立证据需要提升能力，先建议提高 reasoning，再建议提高 Tier；本模块不判断失败归因或实际宿主支持。资源偏好按 [ResourcePolicyV1](resource-policy.md) 在推荐后独立决策，不替代现有执行授权。
+
+完整链路为：请求按需进入 Workshop → DISCUSS/PLAN 确定产品范围与可信授权 → 包外 Recommendation 与 Resource Policy → schema-2 Execution Packet → 当前宿主的 capability preflight → Result → Chat Review/必要时 REVISE 或 PLAN → 可选的被动 Eval。Recommendation 的 ID/解释、具体模型候选、Registry runtime 和 usage 都留在 Packet 外；仅它们变化不重发 Packet。required_capabilities、inputs、scope、authorization 或其他包内容实际变化仍按下文升版及 replan。preflight 逐项报告 Packet 的必需能力；模型的 availability、reasoning control、switching support 与 quota readability 由宿主在独立 runtime 观察中如实提供，静态 Registry 不替代当前预检。无法确认必需能力时在 preflight 记 `available=false`、证据和恢复条件；未知 quota 保留 unknown/null。FRONTIER 的策略允许动作和专用批准都不授予 Packet 副作用或证明 selected/actually_used。
 
 失败后的能力 checkpoint 仅由 [FailureAttributionV1](failure-attribution.md) 的 `routing_reassessment_required` 触发。只有经实际失败证据支持的 CAPABILITY_LIMIT 才能把失败用于 reasoning-first / Tier 重评；REVISE、工具故障、缺上下文、规格含糊、测试与规格冲突和 UNKNOWN 均不自动推高能力。归因建议仍受 Resource Policy、runtime 与批准门禁约束。
 

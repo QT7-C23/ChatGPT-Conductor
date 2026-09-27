@@ -1,5 +1,7 @@
 # FailureAttributionV1（M5）
 
+M6 的 `REGISTRY_STALE` / `REGISTRY_UNKNOWN` 保留 UNKNOWN，`MODEL_UNAVAILABLE` 归 TOOL_OR_ENVIRONMENT；这些证据都不产生 CAPABILITY_LIMIT 或自动升级。Registry 过期和运行不可用应按 [Registry 边界](model-capability-registry.md) 处理。
+
 `scripts/failure-attribution.mjs` 从宿主或 Chat Review 已整理的失败事实生成轻结构附件。输入 `evidence: {ref, signal}[]`；`ref` 是真实 Result check、Review 缺陷、日志、preflight 或获批 Spec 的可定位引用，宿主负责核验。`result_status`（succeeded / partial / blocked）和 `review_verdict`（ACCEPT / REVISE / ESCALATE）仅供关联，不会凭状态或 REVISE 推断能力失败。模块不解析任意日志文本、不额外调用模型或网络；没有足够证据时返回 UNKNOWN。
 
 结果包含 `contract=FailureAttributionV1`、`version=1`、`category`、所用 `evidence` 与 `evidence_refs`、标签式 `confidence`、`recommended_action`、`routing_reassessment_required`、`alternative_explanations`。confidence 是定性标签，不是概率或自动归因准确率承诺。证据冲突时为 UNKNOWN，保留引用与可能类别供诊断。`validateFailureAttribution` 仅检查轻结构、自洽性与升级消费门槛，不能证明证据真实。

@@ -1,6 +1,7 @@
 // Capability recommendation only. The host supplies assessed facts; this module has no I/O or execution authority.
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
+import { resolveRegistryCandidates } from './model-capability-registry.mjs';
 
 const levels = ['LOW', 'MEDIUM', 'HIGH'];
 const tiers = ['FAST', 'BALANCED', 'STRONG', 'FRONTIER'];
@@ -147,6 +148,16 @@ export function compactRecommendation(record, options) {
   validateRoutingRecommendation(record, options);
   return { tier: record.tier, reasoning: record.reasoning, confidence: record.confidence,
     rationale: record.rationale };
+}
+
+// Candidate names stay outside RoutingRecommendationV1 and the schema-2 Packet.
+export function resolveRoutingCandidates({ recommendation, registry, now, overlay = null, host_session = null,
+  eval_scope = null }) {
+  validateRoutingRecommendation(recommendation, { allow_unresolved_inheritance: true });
+  if (recommendation.basis.registry_evidence_digest !== null)
+    same(recommendation.basis.registry_evidence_digest, registry.digest, 'recommendation.basis.registry_evidence_digest');
+  return resolveRegistryCandidates({ registry, tier: recommendation.tier, reasoning: recommendation.reasoning,
+    now, overlay, host_session, eval_scope });
 }
 
 // Called only after the host has independently decided that more capability may be needed.

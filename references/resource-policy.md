@@ -1,5 +1,7 @@
 # ResourcePolicyV1（M4）
 
+具体候选可由 [ModelCapabilityRegistryV1](model-capability-registry.md) 在包外解析；静态候选和 provider/eval 事实不证明当前可用。`decideResourceRouting` 仍只接受宿主已核实的 runtime 状态与独立批准。Registry 候选 unavailable/unknown 时宿主必须如实传入，不能用静态 Tier 推成 available 或 selected；quota 仅取可读的 runtime 观测。
+
 `scripts/resource-policy.mjs` 提供纯本地的 `resolveResourcePolicy`、`reasonableCapabilityRange`、`decideResourceRouting`。宿主传入已解析的配置、M3 `RoutingRecommendationV1`、已核实的 runtime facts；模块不读写配置文件、不查询额度、不调用模型、不切换模型、不修改 Packet 或 ProjectState。
 
 ## 配置与优先级
