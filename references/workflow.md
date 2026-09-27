@@ -4,6 +4,10 @@
 
 对目标、用户、范围或关键取舍尚不明确的产品请求，先用 [Product Workshop](workshop.md) 在 DISCUSS/PLAN 完成发现；明确小任务直接分类和路由。ready Product Brief 可供 PLAN 使用，但不替代本文件的 prepare、授权、版本或恢复规则。
 
+能力推荐可在 workshop、research escalation、pre-execution、failure reassessment、review 或 significant replan 时按需重新判断；这些是 checkpoint，不是新阶段或状态事件。先核对上次推荐的任务绑定、profile、scope/task 摘要以及 runtime capability、policy、registry evidence 摘要；仍适用时继承。简单明确任务走本地 Fast Path，复杂或信号冲突任务走本地保守规则并如实降低 confidence；两者均不发额外模型请求。运行中若已有独立证据需要提升能力，先建议提高 reasoning，再建议提高 Tier；本模块不判断失败归因或实际宿主支持。资源偏好按 [ResourcePolicyV1](resource-policy.md) 在推荐后独立决策，不替代现有执行授权。
+
+失败后的能力 checkpoint 仅由 [FailureAttributionV1](failure-attribution.md) 的 `routing_reassessment_required` 触发。只有经实际失败证据支持的 CAPABILITY_LIMIT 才能把失败用于 reasoning-first / Tier 重评；REVISE、工具故障、缺上下文、规格含糊、测试与规格冲突和 UNKNOWN 均不自动推高能力。归因建议仍受 Resource Policy、runtime 与批准门禁约束。
+
 先判断用户要讨论还是要交付，再判断交付物。`work_type` 由当前模型依据这些规则归一化；校验器不做自然语言理解。
 
 | 用户意图 / 交付物 | 下一站 | 例子 |

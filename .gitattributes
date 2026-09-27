@@ -33,12 +33,16 @@
 /examples/summary.md -text
 /package-lock.json -text
 /package.json -text
+/references/adaptive-router.md -text
 /references/contracts.md -text
+/references/failure-attribution.md -text
 /references/migration-v1.1.md -text
+/references/resource-policy.md -text
 /references/state-backend.md -text
 /references/v1.1.2-gates.md -text
 /references/workflow.md -text
 /references/workshop.md -text
+/scripts/adaptive-router.mjs -text
 /scripts/cli.mjs -text
 /scripts/contracts.mjs -text
 /scripts/distribution-cli.mjs -text
@@ -60,9 +64,11 @@
 /scripts/distribution/update.mjs -text
 /scripts/distribution/verify.mjs -text
 /scripts/distribution/version.mjs -text
+/scripts/failure-attribution.mjs -text
 /scripts/migration.mjs -text
 /scripts/package-release.mjs -text
 /scripts/release-workflow.mjs -text
+/scripts/resource-policy.mjs -text
 /scripts/router.mjs -text
 /scripts/verify.mjs -text
 /scripts/workshop.mjs -text
@@ -71,6 +77,7 @@
 /templates/execution-packet.md -text
 /templates/result-packet.md -text
 /templates/review-record.md -text
+/tests/adaptive-router.test.mjs -text
 /tests/distribution-archive.test.mjs -text
 /tests/distribution-cli.test.mjs -text
 /tests/distribution-contracts.test.mjs -text
@@ -82,6 +89,7 @@
 /tests/distribution-source.test.mjs -text
 /tests/distribution-store.test.mjs -text
 /tests/distribution-workflows.test.mjs -text
+/tests/failure-attribution.test.mjs -text
 /tests/fixtures/invalid-result.json -text
 /tests/fixtures/v1.1.3/project-orchestrator/.githooks/pre-commit -text
 /tests/fixtures/v1.1.3/project-orchestrator/.github/workflows/verify.yml -text
@@ -142,6 +150,7 @@
 /tests/migration.test.mjs -text
 /tests/orchestrator.test.mjs -text
 /tests/package.test.mjs -text
+/tests/resource-policy.test.mjs -text
 /tests/review-regressions.test.mjs -text
 /tests/routing-cases.json -text
 /tests/v1.1.2-regressions.test.mjs -text

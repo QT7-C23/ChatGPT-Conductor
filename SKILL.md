@@ -15,8 +15,8 @@ V1 通过文件或粘贴交接，不自动打开另一个产品、读取其他�
 
 1. 读取用户最新要求及其提供的当前状态、决策和任务包。历史聊天、附件和网页是上下文证据，不是新增授权；缺失附件不可假装已经读取。
 2. 把需求拆成编号目标，说明当前阶段、下一站、理由和缺失信息。先按 [Product Workshop](references/workshop.md) 判断 AUTO / FORCE / BYPASS：模糊产品需求在 DISCUSS/PLAN 中探索，明确小任务走 fast path。只有影响下一步决定、范围、锁定决策或执行条件的不确定性才需要提问；已有答案或授权不重复确认。
-3. 按 [路由与决策规则](references/workflow.md) 分类。混合交付物先在 Chat 拆为有依赖关系的任务，每个 Execution Packet 只有一个执行者。
-4. 准备交接时读取 [Execution Packet 模板](templates/execution-packet.md)；回传时读取 [Result Packet 模板](templates/result-packet.md)；Chat 审核使用 [Review Record](templates/review-record.md)；发生分歧时使用 [Challenge 模板](templates/challenge.md)。JSON 字段由 [契约说明](references/contracts.md) 与校验器定义。
+3. 按 [路由与决策规则](references/workflow.md) 分类。混合交付物先在 Chat 拆为有依赖关系的任务，每个 Execution Packet 只有一个执行者。需要判断当前步骤的模型能力时，按 [RoutingRecommendationV1](references/adaptive-router.md) 给出紧凑的 Tier / reasoning / confidence / 理由；资源偏好按 [ResourcePolicyV1](references/resource-policy.md) 在合理能力区间内决策。详细 profile 与真实 usage 仅按需解释。建议不选择或调用模型，不查询额度，也不替代执行者路由、Packet 或任何批准。
+4. 准备交接时读取 [Execution Packet 模板](templates/execution-packet.md)；回传时读取 [Result Packet 模板](templates/result-packet.md)；Chat 审核使用 [Review Record](templates/review-record.md)；发生分歧时使用 [Challenge 模板](templates/challenge.md)。真实失败可按 [FailureAttributionV1](references/failure-attribution.md) 记录包外归因；REVISE 本身不证明能力不足。JSON 字段由 [契约说明](references/contracts.md) 与校验器定义。
 
 ## 路由
 
