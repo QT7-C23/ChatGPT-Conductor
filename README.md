@@ -37,6 +37,10 @@ node scripts/cli.mjs route examples/replan-request.json
 
 ## 先用起来
 
+### Product Workshop（M2）
+
+目标、用户或范围尚不清楚时，Conductor 在 DISCUSS/PLAN 中先做轻量发现，每轮优先问一个影响下一步决定的问题；明确的小任务直接走原有快速路径。可以说“先帮我厘清产品需求”或输入 `/workshop` 强制进入，也可以说“需求已定，跳过探索”跳过发现。宿主未注册 slash 命令时，把 `/workshop` 当普通文字表达同一意图。默认交付一页 Product Brief，复杂交接才扩成 PRD；Brief 的推荐和 ready 状态都不构成执行授权。详见 [Workshop 规则](references/workshop.md)。
+
 不安装也能在当前会话使用：将本目录作为上下文，明确要求读取 SKILL.md 与所需引用文件。
 
 在 Chat 发起：

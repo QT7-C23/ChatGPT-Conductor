@@ -2,6 +2,8 @@
 
 ## 任务分类
 
+对目标、用户、范围或关键取舍尚不明确的产品请求，先用 [Product Workshop](workshop.md) 在 DISCUSS/PLAN 完成发现；明确小任务直接分类和路由。ready Product Brief 可供 PLAN 使用，但不替代本文件的 prepare、授权、版本或恢复规则。
+
 先判断用户要讨论还是要交付，再判断交付物。`work_type` 由当前模型依据这些规则归一化；校验器不做自然语言理解。
 
 | 用户意图 / 交付物 | 下一站 | 例子 |

@@ -1,0 +1,28 @@
+# Product Workshop (M2)
+
+Workshop is a DISCUSS/PLAN activity. It changes neither `schema_version=2` nor the seven lifecycle states. It does not prepare, start, execute, review, change locked decisions, or grant side effects. A ready Product Brief is an input to PLAN, never an Execution Packet or approval.
+
+## Entry and pace
+
+- AUTO: use the existing request and context. Enter when the product goal, intended users/outcome, scope, or a choice that changes the proposed product is unresolved. A defined small task goes directly through the normal fast path. Do not run a separate classifier or research call to decide this.
+- FORCE: `/workshop` or a clear natural language request such as “先帮我厘清产品需求” enters Workshop. For a defined small task, keep it light and finish promptly; do not impose a full PRD.
+- BYPASS: a clear request to skip discovery continues the normal route. Missing execution authorization, blocking open decisions, migration reauthorization, preflight, side-effect checks, and Review still apply.
+- `/conductor help` may explain these choices. Do not add a Workshop subcommand tree or claim the host has registered slash commands. The phrase `/workshop` is also readable as ordinary user text.
+
+When local Node is available, `scripts/workshop.mjs` exposes `chooseWorkshop`, `advanceDiscovery`, and `createProductBrief` as pure helpers for structured facts. The host or Chat interprets natural language and verifies source trust; the helpers do not read conversations, browse, persist files, or change governance state. The same rules apply without Node.
+
+## Discovery and Decision Readiness
+
+Start with the user's existing answers and artifacts. Keep a compact Discovery Ledger in working context: `id`, statement, classification, source, decision impact, owner, blocking, and resolution. Do not ask answered questions again. An unknown is **blocking** only if its answer changes the next product decision or prevents a responsible scope/recommendation. Otherwise keep it as a non-blocking open question and move on. Ask at most the highest-impact blocking question in a turn.
+
+If the user says “不知道”, explain the meaningful alternatives and tradeoffs, recommend one with a reason, and ask only for the decision that remains theirs. For an executor-owned technical choice already inside the approved scope, choose and record the recommendation locally before continuing; do not delegate routine technical judgment back to the user. An unaccepted user-owned recommendation remains a recommendation. Decision readiness is reached when no blocking product unknown remains for the next decision; readiness does not mean every detail is known or authorized. At readiness, proactively draft the Product Brief.
+
+Research-on-Demand begins only when a specific external fact could change a critical product choice. State the fact to verify, why it affects the decision, and the needed source. Use host browsing if available; this repository does not itself verify the web. Record evidence as `VERIFIED_OFFICIAL`, `VERIFIED_PRIMARY`, `THIRD_PARTY`, `USER_PROVIDED`, `INFERENCE`, or `UNKNOWN`, with source and what it supports. “Verified” requires actual source inspection; user claims and inference must not be relabeled. Evidence supports a recommendation but never creates user authorization. No default search for a clear task or for facts that cannot affect the decision.
+
+## Product Brief and handoff
+
+Default to a concise, roughly one-page `ProductBriefV1` Markdown draft. Cover Problem, Users / Scenario, Desired Outcome, Scope In / Out, Evidence, Proposed Approach, Alternatives, Key Decisions, Open Questions, Success Criteria, and Delivery Depth. Mark status `draft`, `ready`, or `superseded`. Keep the recommendation separate from confirmed decisions; each confirmed decision needs a trustworthy user approval reference. A Brief may state that no confirmed decision or execution authorization exists. Do not infer either from a recommendation or completed document.
+
+Use `ready` only when the product decision is ready, all required sections are populated, and the actual Brief has been delivered completely. The pure helper defaults `deliveryComplete` to false; the host must explicitly establish completion after delivery. If output is long, plan sections before sending, identify part order, confirm delivered boundaries, resume from the first unconfirmed part, and use a completion marker. Missing sections, an incomplete transfer, or approval of only some parts leaves the Brief `draft` for that scope. The M9 DeliveryManifest protocol is not introduced here. A PRD is warranted only when the product's complexity, stakeholders, or handoff detail exceeds the Brief; do not require one by default.
+
+Save the Brief only for a real handoff or recovery need; otherwise leave it in the conversation. Keep the Ledger inside the Brief or runtime context unless extended research needs its own portable record. Old schema-2 projects without a Brief or Ledger remain valid; do not backfill files or trigger migration. PLAN may use a ready Brief to create the existing scope, decisions, acceptance, and exact authorization records. Existing packet digest, migration/recovery, execution, Review, and side-effect rules remain authoritative.

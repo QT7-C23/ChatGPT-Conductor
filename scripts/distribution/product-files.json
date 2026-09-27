@@ -38,6 +38,7 @@
   "references/state-backend.md",
   "references/v1.1.2-gates.md",
   "references/workflow.md",
+  "references/workshop.md",
   "scripts/cli.mjs",
   "scripts/contracts.mjs",
   "scripts/distribution-cli.mjs",
@@ -64,6 +65,7 @@
   "scripts/release-workflow.mjs",
   "scripts/router.mjs",
   "scripts/verify.mjs",
+  "scripts/workshop.mjs",
   "templates/challenge.md",
   "templates/decision-change.md",
   "templates/execution-packet.md",
@@ -143,5 +145,6 @@
   "tests/review-regressions.test.mjs",
   "tests/routing-cases.json",
   "tests/v1.1.2-regressions.test.mjs",
-  "tests/v1.1.3-regressions.test.mjs"
+  "tests/v1.1.3-regressions.test.mjs",
+  "tests/workshop.test.mjs"
 ]
