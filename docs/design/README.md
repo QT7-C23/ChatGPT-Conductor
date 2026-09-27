@@ -3,6 +3,7 @@
 本目录收录仓库设计资料；下一功能版 Spec 不代表当前已实现或已发布。
 
 - [下一功能版：Product Workshop + Adaptive Model Router](next-product-workshop-router.md)：M0 固化的已接受架构、开放项、验收标准与实施分解。
+- [M1 Contract & UX Spike](m1-contract-ux-spike.md)：合同强度、存储和交付边界、最小命令与隔离原型；待主 Chat Review。
 - [分发、批准与恢复](distribution.md)：现有分发接口设计；历史状态以最新审核证据为准。
 - [Release workflow](release-process.md)：既有发布流程与尚需真实验证的门禁。
 
