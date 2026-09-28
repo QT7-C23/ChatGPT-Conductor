@@ -24,10 +24,12 @@ test('candidate is deterministic, first-boot complete and cannot impersonate a r
   const a=await buildCandidate({out:path.join(root,'a'),sourceCommit:'b'.repeat(40)}),b=await buildCandidate({out:path.join(root,'b'),sourceCommit:'b'.repeat(40)});
   assert.equal(a.payload.sha256,b.payload.sha256);assert.deepEqual(await fs.readFile(a.payload_path),await fs.readFile(b.payload_path));
   assert.equal(a.release_id,undefined);assert.equal(a.kind,'candidate');
+  assert.equal(a.version,'1.3.0');assert.equal(a.payload.name,'chatgpt-conductor-1.3.0.zip');
   assert.ok(a.payload.files.some(f=>f.path==='node_modules/yauzl/index.js'));assert.ok(a.payload.files.some(f=>f.path==='node_modules/yazl/LICENSE'));
   assert.ok(!a.payload.files.some(f=>f.path.includes('.superpowers')||f.path==='release-manifest.json'));
   await assert.rejects(finalizeManifest({candidate:a,release:{}}));
   const manifest=await finalizeManifest({candidate:a,release:{release_id:'123',source_commit:'b'.repeat(40),channel:'stable'},out:path.join(root,'final')});assert.deepEqual(manifest.migrations.map(m=>m.from_profile),['po-legacy-schema1','po-legacy-schema2']);
+  assert.equal(manifest.tag,'v1.3.0');assert.equal(manifest.runtime.min_manager_version,'1.3.0');assert.deepEqual(manifest.upgrade_from,['1.1.3']);
   assert.equal(manifest.payload.sha256,a.payload.sha256);assert.ok((await fs.readFile(path.join(root,'final','SHA256SUMS'),'utf8')).includes('release-manifest.json'));
   await fs.appendFile(a.payload_path,'changed');await assert.rejects(finalizeManifest({candidate:a,release:{release_id:'124',source_commit:'b'.repeat(40),channel:'stable'},out:path.join(root,'tampered')}));
 });

@@ -12,13 +12,13 @@ export async function zipBytes(entries = [{ name: 'chatgpt-conductor/SKILL.md', 
 }
 export async function fixture(t, { zip = null, mutateManifest = () => {}, mutateRelease = () => {}, handle = null, authFailure = false, notes = Buffer.from('Exact notes\r\n'), sourceFactory = createReleaseSource } = {}) {
   zip ??= await zipBytes();
-  const manifest = { manifest_version:1, product:'chatgpt-conductor', version:'1.2.0', channel:'stable', repository:REPOSITORY, tag:'v1.2.0', source_commit:'b'.repeat(40), release_id:'123', skill_id:'chatgpt-conductor', payload:{ name:'chatgpt-conductor-1.2.0.zip', bytes:zip.length, sha256:hash(zip), archive_root:'chatgpt-conductor', files:[{path:'SKILL.md',bytes:5,sha256:hash('hello')}] }, changelog:{name:'CHANGELOG.md',bytes:notes.length,sha256:hash(notes)}, runtime:{node_majors:[22,24],platforms:['win32-x64','linux-x64'],min_manager_version:'1.2.0'},data_contract:{schema_version:2,profile:'po-1.1.3',read_profiles:['po-1.1.3'],write_profile:'po-1.1.3'},upgrade_from:['1.1.3'],migrations:[],verification:{profile:'conductor-node-verify-v1'},baseline_provenance:null };
+  const manifest = { manifest_version:1, product:'chatgpt-conductor', version:'1.3.0', channel:'stable', repository:REPOSITORY, tag:'v1.3.0', source_commit:'b'.repeat(40), release_id:'123', skill_id:'chatgpt-conductor', payload:{ name:'chatgpt-conductor-1.3.0.zip', bytes:zip.length, sha256:hash(zip), archive_root:'chatgpt-conductor', files:[{path:'SKILL.md',bytes:5,sha256:hash('hello')}] }, changelog:{name:'CHANGELOG.md',bytes:notes.length,sha256:hash(notes)}, runtime:{node_majors:[22,24],platforms:['win32-x64','linux-x64'],min_manager_version:'1.3.0'},data_contract:{schema_version:2,profile:'po-1.1.3',read_profiles:['po-1.1.3'],write_profile:'po-1.1.3'},upgrade_from:['1.1.3'],migrations:[],verification:{profile:'conductor-node-verify-v1'},baseline_provenance:null };
   mutateManifest(manifest);
   const raw = Buffer.from(JSON.stringify(manifest));
   const contents = new Map([['1',raw],['2',notes],['3',zip]]);
   const names = ['release-manifest.json','CHANGELOG.md',manifest.payload.name];
   const assets = [...contents].map(([id,body],i) => ({id:Number(id),name:names[i],state:'uploaded',size:body.length,digest:`sha256:${hash(body)}`}));
-  const release = {id:123,tag_name:'v1.2.0',draft:false,immutable:true,prerelease:false,target_commitish:'ignored'};
+  const release = {id:123,tag_name:'v1.3.0',draft:false,immutable:true,prerelease:false,target_commitish:'ignored'};
   mutateRelease(release);
   const requests = []; const auth = [];
   const server = http.createServer((req,res) => {

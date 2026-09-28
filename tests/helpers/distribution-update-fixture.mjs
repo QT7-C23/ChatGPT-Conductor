@@ -20,7 +20,7 @@ async function managerFiles() {
 export async function setup(t,{script = 'if(process.env.GH_TOKEN || process.env.NODE_OPTIONS || process.env.PATH) process.exit(9);',project = false, migrations = []} = {}) {
   const root = await canonicalPath(await fs.mkdtemp(path.join(os.tmpdir(),'conductor-install-')));
   t.after(()=>fs.rm(root,{recursive:true,force:true}));
-  const contents = {...await managerFiles(),'SKILL.md':'---\nname: chatgpt-conductor\nmetadata:\n  version: "1.2.0"\n---\n','package.json':JSON.stringify({name:'chatgpt-conductor',version:'1.2.0',type:'module'}),'scripts/verify.mjs':script};
+  const contents = {...await managerFiles(),'SKILL.md':'---\nname: chatgpt-conductor\nmetadata:\n  version: "1.3.0"\n---\n','package.json':JSON.stringify({name:'chatgpt-conductor',version:'1.3.0',type:'module'}),'scripts/verify.mjs':script};
   const zip = await zipBytes(Object.entries(contents).map(([name,body])=>({name:`chatgpt-conductor/${name}`,body})));
   const mutateManifest=m=>{m.migrations=migrations;m.payload.files=Object.entries(contents).map(([path,body])=>({path,bytes:Buffer.byteLength(body),sha256:hash(body)}));};
   const bootstrap = await fixture(t,{zip,mutateManifest});

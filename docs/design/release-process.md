@@ -1,13 +1,50 @@
-# Local release workflow proposals
+# Release workflow and live configuration
 
-These workflows are local implementation proposals. They have not run on GitHub.
-The package remains private for npm; the project license is MIT. `POLICY` in
-`scripts/release-workflow.mjs` records MIT but deliberately has no public-evidence approval,
-authorized maintainer identity, ruleset IDs or publisher integration ID configured. All
-approval, draft and publication paths fail closed until a separately reviewed configuration
-change and live integration checks. The V1.2.0 profile is single-maintainer: one allowlisted
+The release workflows have not yet run on GitHub. The package remains private
+for npm; the project license is MIT. `POLICY` in `scripts/release-workflow.mjs`
+records the verified owner, main ruleset and dedicated publisher identity.
+Public-evidence consent remains unset. Approval, draft and publication paths fail closed until policy and live
+configuration checks pass. The V1.3.0 profile is single-maintainer: one allowlisted
 owner approves the two explicit release stages; an independent PR reviewer is not required.
 An environment name or repository variable alone is never accepted as protection.
+
+The local product and packaging target is 1.3.0. The older exact `v1.2.0`
+rulesets are preserved. Each new version needs its own exact creation and
+immutable tag rules; changing a package version does not extend protection.
+The release jobs now use the registered publisher App via the official pinned
+`actions/create-github-app-token` action. Credential setup and a successful live
+preflight are still required. Do not reuse 1.2.0 candidate or approval evidence.
+
+## Publisher authentication and configuration preflight
+
+The private App is `QT7-C23 Conductor Publisher` (Integration ID `5109993`,
+installation `165834076`). The fixed client ID is public configuration. An owner
+must generate its private key and store it as repository Actions secret
+`CONDUCTOR_PUBLISHER_PRIVATE_KEY`; never paste it into a chat or commit it.
+The installation covers only `ChatGPT-Conductor`, with Contents:write,
+Actions:read and Administration:read (Metadata:read is automatic).
+
+Each trusted release job mints its own token for this repository. Read jobs
+explicitly request Contents:read; only the prepare/publish writers request
+Contents:write. All built-in `GITHUB_TOKEN` permissions stay read-only.
+Tokens are revoked by the action at job end. The helper checks the action's
+installation ID and App slug against trusted policy. Candidate verification
+children receive no credential environment variables.
+
+Dispatch `preflight-release` on main to gather a read-only configuration report
+and download the `configuration-preflight` artifact. It reports license,
+public-evidence consent, publisher identity, repository identity, immutable
+releases, owner environment, exact main/tag rules and local `gh` verification
+command support. Its `stage=configuration` READY is only configuration readiness;
+candidate CI, deterministic bytes and both owner decisions are checked by their
+later gates. Command support does not prove a release attestation already exists.
+
+Bypass actor visibility must be tested with the actual installation token.
+GitHub documents that this property can be omitted for callers lacking ruleset
+write access. Omission remains UNKNOWN, never an empty bypass list. The optional
+existing `RELEASE_CONFIG_TOKEN` can supply configuration reads; no additional
+token or Administration:write permission is created automatically. Resolve any
+live visibility limitation before releasing.
 
 ## Verification and byte identity
 
@@ -60,7 +97,9 @@ argument arrays, never shell expressions.
 artifact IDs and archive digests. Its protected read-only check job rebuilds and
 verifies the actual candidate and compares approved hashes. The dependent writer
 checks out only trusted default workflow source, reauthenticates both artifacts,
-and rechecks remote configuration. It creates a new lightweight `refs/tags/v1.2.0`
+and rechecks remote configuration, current main HEAD and the latest exact-source
+four-matrix CI run. The reviewed source must still be main HEAD for preparation
+and publication, avoiding a need for Workflows:write. It creates a new lightweight `refs/tags/v1.3.0`
 at the exact candidate commit; existing tags cause refusal, never force/reuse.
 It creates a draft, obtains the real ID, generates the external manifest through
 the existing packager and uploads only ZIP, CHANGELOG.md, release-manifest.json
@@ -110,7 +149,7 @@ and therefore no installable target.
 The read-only check, writer and post-publish verification do not have separate
 environment prompts. The two `approve-release` jobs are the only environment-gated
 steps. A consumed preparation receipt cannot create another tag: tag creation
-fails if the exact V1.2.0 tag already exists. A publish receipt cannot publish a
+fails if the exact V1.3.0 tag already exists. A publish receipt cannot publish a
 different draft or be replayed after publication: exact Release ID and asset
 hashes must match, and the writer requires the Release still to be a draft.
 
@@ -118,24 +157,28 @@ hashes must match, and the writer requires the Release still to be a draft.
 
 - MIT is selected; the owner must still approve what evidence may be
   public. A reviewed policy change records those decisions and authorized users.
-- Default branch must be `main`; the live gate requires enforced admin protection,
-  strict four-matrix required checks and no branch force-push/deletion. Normal
+- Default branch must be `main`; the live gate reads active `main-protection`
+  ruleset `24122310`, exact main inclusion, no bypass, PRs with zero required
+  approvals, the four checks bound to GitHub Actions Integration `15368`, and
+  no branch force-push/deletion. The approved ruleset does not require strict
+  up-to-date branches. Normal
   development uses a feature branch and PR, but a second GitHub account's approval
   is not a release requirement.
-  Configure two separate active tag rulesets for exact `refs/tags/v1.2.0`: creation
+  Configure two separate active tag rulesets for exact `refs/tags/v1.3.0`: creation
   permits only the reviewed publisher Integration ID, while update/deletion have
-  no bypass actors. Their exact ruleset IDs and publisher ID are unconfigured in
-  POLICY. Broader, ambiguous or inaccessible policies fail closed. Validate the
-  actual GITHUB_TOKEN integration identity/creation permission in M8 before use.
+  no bypass actors. Record only live-verified ruleset IDs in POLICY. Broader,
+  ambiguous or inaccessible policies fail closed. The dedicated App identity,
+  rather than the built-in Actions integration, performs writes.
 - Configure one `release-approval` environment with exactly the single owner
   allowlisted, `prevent_self_review=false`, and one custom branch policy:
   type=branch, name=main. Only the two owner decision jobs use it. The actual
   GitHub plan and environment behavior must be confirmed in preflight; unknown
   behavior blocks release.
-- Provide the protected read-only `RELEASE_CONFIG_TOKEN` with Administration:read
-  for the repository immutability API. A contents:write token does not imply that
-  permission. Unknown/disabled/inaccessible immutability or environment policy
-  blocks the helper. The token is not passed to candidate child processes.
+- The App token explicitly requests Administration:read for repository
+  immutability reads. A contents:write token does not imply that permission.
+  An existing optional `RELEASE_CONFIG_TOKEN` may be reused if needed for
+  configuration visibility. Unknown/disabled/inaccessible immutability or
+  environment policy blocks the helper. Tokens never reach candidate children.
 - Enable immutable releases, verify environment support on the repository plan,
   require the four verify checks, and confirm token permissions/actor fields,
   artifact digest/download APIs, current attempts and `gh` attestation support.
@@ -164,19 +207,24 @@ release attestation passed. The actual attestation result is evaluated only afte
 publication. Any non-READY preflight prevents publishing. `releasePreflight(gates)`
 implements and tests this three-state preflight contract; the separate
 `postPublishVerification(gates)` contract reports `VERIFIED` or
-`PUBLISHED_UNVERIFIED`. The current workflow entry points do not yet gather and
-emit one aggregate live preflight report; until that M8 integration exists, no
-operator may infer pre-publish READY from individual successful steps.
+`PUBLISHED_UNVERIFIED`. `preflight-release` gathers a configuration-stage report.
+It deliberately does not label a not-yet-approved candidate READY for publication.
+The approval, prepare and publish entrypoints independently enforce their
+source, current CI, artifact, byte and decision bindings.
 
-Repository facts carried into this revision: Releases and rulesets were reported
-empty; classic main protection remains UNKNOWN because the available GitHub App
-could not read it (403). This revision performed no live configuration read, so
-these states remain unchanged. A later read-only preflight must preserve UNKNOWN
-for unreadable protection rather than treating it as absent or disabled.
+The earlier empty-ruleset observation is superseded by live configuration on
+2026-09-28: main ruleset `24122310`, owner environment `release-approval`,
+dedicated publisher installation, preserved exact 1.2.0 tag rules, and exact
+1.3.0 creation rule `24127483` (only Integration `5109993`) and immutable tag rule
+`24127202` (no bypass). Repository Release immutability was enabled
+and verified by reloading its settings page. UI evidence does not replace the
+runtime identity's API reads. No Release attestation has been verified yet.
 
 The protection shape follows the official [repository rules REST API](https://docs.github.com/en/rest/repos/rules),
-checked read-only during implementation. Strict settings are an implementation
-requirement; this citation does not claim those settings exist in this repository.
+checked during implementation. App authentication follows the official
+[GitHub App Actions guidance](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/making-authenticated-api-requests-with-a-github-app-in-a-github-actions-workflow).
+Immutable publication generates a release attestation as described by
+[GitHub](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases).
 
 ## Single-maintainer policy migration
 
@@ -189,5 +237,6 @@ schema 1 is retained for the existing V1.2.0 workflow contract. Old artifacts ar
 not upgraded or treated as new consent: they must still pass the current owner
 identity, remote environment, exact source/draft, and digest checks. Reissue both
 owner approvals under the revised workflow as the unambiguous migration path.
-This does not rewrite or authorize a V1.2.0 candidate, tag or release. No remote
-setting has been inspected or changed by this policy revision.
+The earlier policy migration did not rewrite or authorize a V1.2.0 candidate,
+tag or release. Subsequent live settings are recorded in the configuration
+section above; they do not constitute either candidate or publish consent.

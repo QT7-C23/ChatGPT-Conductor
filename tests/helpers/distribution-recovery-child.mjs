@@ -39,11 +39,11 @@ try {
   }else{
     async function bundleFor(contents,version) {
       const zip=await zipBytes(Object.entries(contents).map(([name,body])=>({name:`chatgpt-conductor/${name}`,body:Buffer.from(body,'base64')})));
-      const f=await fixture(t,{zip,sourceFactory:sourceModule.createReleaseSource,mutateRelease:r=>{r.tag_name=`v${version}`;},mutateManifest:m=>{m.version=version;m.tag=`v${version}`;m.payload.name=`chatgpt-conductor-${version}.zip`;m.upgrade_from=['1.2.0'];m.payload.files=Object.entries(contents).map(([path,b])=>({path,bytes:Buffer.from(b,'base64').length,sha256:hash(Buffer.from(b,'base64'))}));}});
+      const f=await fixture(t,{zip,sourceFactory:sourceModule.createReleaseSource,mutateRelease:r=>{r.tag_name=`v${version}`;},mutateManifest:m=>{m.version=version;m.tag=`v${version}`;m.payload.name=`chatgpt-conductor-${version}.zip`;m.upgrade_from=['1.3.0'];m.payload.files=Object.entries(contents).map(([path,b])=>({path,bytes:Buffer.from(b,'base64').length,sha256:hash(Buffer.from(b,'base64'))}));}});
       return {bundle:await f.source.acquirePayload(await f.source.authenticateRelease('123')),source:f.source};
     }
-    const manager=await bundleFor(request.managerContents,'1.2.0');
-    const target=await bundleFor(request.targetContents,request.mode==='install'?'1.2.0':'1.2.1');
+    const manager=await bundleFor(request.managerContents,'1.3.0');
+    const target=await bundleFor(request.targetContents,request.mode==='install'?'1.3.0':'1.3.1');
     const {canonicalSha256}=await import(pathToFileURL(`${base}/scripts/distribution/contracts.mjs`));
     request.plan.target_release=target.bundle.descriptor;
     request.plan.changelog={body:target.bundle.changelog,sha256:target.bundle.descriptor.changelog_sha256};

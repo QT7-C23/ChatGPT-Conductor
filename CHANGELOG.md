@@ -1,4 +1,12 @@
-# V1.2.0 候选变更
+# V1.3.0 候选变更
+
+2026-09-28：将新增分发与单维护者发布能力的当前候选标为 1.3.0；同步 package/Skill 元数据、候选 ZIP、发布校验、管理器身份和相关测试。README 新增英文介绍、使用与安装说明，并明确候选版本与精确 tag 保护的区别。数据 schema 2、`po-1.1.3` profile、依赖版本和 V1.1.3 历史夹具保持不变。
+
+发布接入改为专用 GitHub App：只为 prepare/publish 签发 Contents:write 短期 token，其余发布任务显式请求只读权限；内置 GITHUB_TOKEN 均只读。预检准确读取 main ruleset、四个 GitHub Actions 检查和零审批 PR 规则，拒绝管理员绕过审批环境；新增只读配置预检报告，缺失 bypass 信息保持 UNKNOWN。创建 tag 和发布前复核当前 main HEAD 及完整 CI。
+
+本次版本调整不构成发布。现有 `v1.2.0` tag 保护继续保留，已新增仅保护 `v1.3.0` 的创建及不可变规则，并启用仓库 Release 不可变保护。publisher 私钥配置、证据公开许可、真实 Preflight 和两阶段 owner approval 仍须完成。
+
+## 保留的 V1.2.0 候选记录
 
 ChatGPT Conductor 增加独立分发 CLI、精确 Release 身份与批准绑定、安装/更新/回滚/显式旧数据迁移和离线恢复。V1.1.3 公共合同与旧 CLI 字节保持不变；普通软件升级不重写项目数据。运行器留在 Skill 目录之外。
 

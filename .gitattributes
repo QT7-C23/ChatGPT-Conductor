@@ -4,6 +4,7 @@
 /.github/workflows/approve-release.yml -text
 /.github/workflows/package-candidate.yml -text
 /.github/workflows/prepare-release.yml -text
+/.github/workflows/preflight-release.yml -text
 /.github/workflows/publish-release.yml -text
 /.github/workflows/verify-published.yml -text
 /.github/workflows/verify.yml -text

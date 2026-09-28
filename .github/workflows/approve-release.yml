@@ -54,14 +54,30 @@
           "working-directory": "trusted"
         },
         {
+          "name": "Authenticate dedicated publisher",
+          "id": "publisher",
+          "uses": "actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1",
+          "with": {
+            "client-id": "Iv23liKIJaTalWOI0IwZ",
+            "private-key": "${{ secrets.CONDUCTOR_PUBLISHER_PRIVATE_KEY }}",
+            "owner": "QT7-C23",
+            "repositories": "ChatGPT-Conductor",
+            "permission-contents": "read",
+            "permission-actions": "read",
+            "permission-administration": "read"
+          }
+        },
+        {
           "name": "Gate approve",
           "run": "node scripts/release-workflow.mjs approve",
           "working-directory": "trusted",
           "env": {
-            "GH_TOKEN": "${{ github.token }}",
-            "RELEASE_CONFIG_TOKEN": "${{ secrets.RELEASE_CONFIG_TOKEN }}",
+            "GH_TOKEN": "${{ steps.publisher.outputs.token }}",
+            "RELEASE_CONFIG_TOKEN": "${{ secrets.RELEASE_CONFIG_TOKEN || steps.publisher.outputs.token }}",
             "APPROVAL_PURPOSE": "candidate",
-            "APPROVAL_PACKET": "${{ inputs.packet }}"
+            "APPROVAL_PACKET": "${{ inputs.packet }}",
+            "PUBLISHER_INSTALLATION_ID": "${{ steps.publisher.outputs.installation-id }}",
+            "PUBLISHER_SLUG": "${{ steps.publisher.outputs.app-slug }}"
           }
         },
         {
@@ -105,14 +121,30 @@
           "working-directory": "trusted"
         },
         {
+          "name": "Authenticate dedicated publisher",
+          "id": "publisher",
+          "uses": "actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1",
+          "with": {
+            "client-id": "Iv23liKIJaTalWOI0IwZ",
+            "private-key": "${{ secrets.CONDUCTOR_PUBLISHER_PRIVATE_KEY }}",
+            "owner": "QT7-C23",
+            "repositories": "ChatGPT-Conductor",
+            "permission-contents": "read",
+            "permission-actions": "read",
+            "permission-administration": "read"
+          }
+        },
+        {
           "name": "Gate approve",
           "run": "node scripts/release-workflow.mjs approve",
           "working-directory": "trusted",
           "env": {
-            "GH_TOKEN": "${{ github.token }}",
-            "RELEASE_CONFIG_TOKEN": "${{ secrets.RELEASE_CONFIG_TOKEN }}",
+            "GH_TOKEN": "${{ steps.publisher.outputs.token }}",
+            "RELEASE_CONFIG_TOKEN": "${{ secrets.RELEASE_CONFIG_TOKEN || steps.publisher.outputs.token }}",
             "APPROVAL_PURPOSE": "publish",
-            "APPROVAL_PACKET": "${{ inputs.packet }}"
+            "APPROVAL_PACKET": "${{ inputs.packet }}",
+            "PUBLISHER_INSTALLATION_ID": "${{ steps.publisher.outputs.installation-id }}",
+            "PUBLISHER_SLUG": "${{ steps.publisher.outputs.app-slug }}"
           }
         },
         {

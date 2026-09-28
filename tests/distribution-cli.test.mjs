@@ -22,7 +22,7 @@ test('public help and bad calls emit one sanitized envelope with real exit codes
   }
 });
 async function publicFixture(t){
-  const i=await setup(t);const old=await baselineContents();const server=await localServer(t,[await localRelease(old,'1.1.3','113'),await localRelease(i.contents,'1.2.0','120')]);
+  const i=await setup(t);const old=await baselineContents();const server=await localServer(t,[await localRelease(old,'1.1.3','113'),await localRelease(i.contents,'1.3.0','120')]);
   const config={install_id:'public',scope:'user',control_path:`${i.root}/.agents/.conductor/public`,target_release_id:'120',channel:'stable',projects:[],software_only:true,snapshot_path:`${i.root}/snapshots/public`};
   const run=(args,options)=>cliChild(i.root,server.port,args,options);
   async function plan(command,c=config){const file=`${i.root}/config.json`;await fs.writeFile(file,JSON.stringify(c));const r=await run([command,'--plan','--config',file]);assert.equal(r.code,0,r.out+r.err);return r.body.plan;}

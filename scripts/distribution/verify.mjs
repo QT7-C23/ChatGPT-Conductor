@@ -25,7 +25,7 @@ export async function verifyProjectCompatibility({bundle,root,projects}) {
 // The Windows full gate measured 485 seconds before public distribution tests.
 // Twenty minutes is a finite per-candidate budget; approval covers two candidates.
 export const CANDIDATE_TIMEOUT_MS = 20 * 60 * 1000;
-export async function verifyCandidate({bundle,root,managerVersion = '1.2.0',timeoutMs = CANDIDATE_TIMEOUT_MS,outputLimit = 1024*1024}) {
+export async function verifyCandidate({bundle,root,managerVersion = '1.3.0',timeoutMs = CANDIDATE_TIMEOUT_MS,outputLimit = 1024*1024}) {
   requireAuthenticatedBundle(bundle,{payload:true});
   const manifest = bundle.manifest;
   if (!manifest.runtime.node_majors.includes(Number(process.versions.node.split('.')[0])) || !manifest.runtime.platforms.includes(`${process.platform}-${process.arch}`) || compareSemVer(managerVersion,manifest.runtime.min_manager_version)<0) throw new DistributionError('UNSUPPORTED_RUNTIME','Candidate runtime is unsupported');
