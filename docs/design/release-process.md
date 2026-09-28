@@ -102,6 +102,11 @@ permits exact named flat files with size limits; candidate code is never importe
 or executed by a writer. Inputs enter environment variables and validated fixed
 argument arrays, never shell expressions.
 
+Actions archive requests use `application/vnd.github+json` at the REST download
+endpoint; release-asset byte requests use `application/octet-stream`. Remote-read
+failures report only a fixed operation label and an HTTP status when available,
+never credentials, response bodies, signed download URLs or transport messages.
+
 ## Draft preparation
 
 `prepare-release` takes candidate commit plus candidate and approval run IDs,

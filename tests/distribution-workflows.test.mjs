@@ -6,7 +6,7 @@ import os from 'node:os';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {buildCandidate,finalizeManifest} from '../scripts/package-release.mjs';
-import {validateBuild,validateApproval,validateConfiguration,validatePublisher,configurationPreflight,validateRepositoryProtection,validateMatrix,validatePublication,validateFinalFiles,releasePreflight,postPublishVerification,sha256,githubClient,POLICY,ENVIRONMENTS} from '../scripts/release-workflow.mjs';
+import {validateBuild,validateApproval,validateConfiguration,validatePublisher,configurationPreflight,validateRepositoryProtection,validateMatrix,validatePublication,validateFinalFiles,releasePreflight,postPublishVerification,releaseFailureEvidence,sha256,githubClient,POLICY,ENVIRONMENTS} from '../scripts/release-workflow.mjs';
 
 const sha='a'.repeat(40), digest='b'.repeat(64);
 const identity={repository:'QT7-C23/ChatGPT-Conductor',workflow:'.github/workflows/package-candidate.yml',workflow_ref:'refs/heads/main',workflow_sha:'c'.repeat(40),run_id:'42',run_attempt:1,source_commit:sha};
@@ -44,6 +44,32 @@ test('API adapter reads the canonical repository root without a trailing slash',
   });
   assert.deepEqual(await client.request(''),{id:1382745738,default_branch:'main'});
   assert.deepEqual(calls,[root]);
+});
+
+test('artifact archive downloads use the Actions REST media type while preserving binary bytes',async()=>{
+  const archive=Buffer.from([0x50,0x4b,0x03,0x04,0xff,0x00]);
+  const client=githubClient('fixture-only',async(url,options)=>{
+    assert.equal(url,'https://api.github.com/repos/QT7-C23/ChatGPT-Conductor/actions/artifacts/7/zip');
+    if(options.headers.Accept!=='application/vnd.github+json')return new Response('',{status:415});
+    return new Response(archive);
+  });
+  assert.deepEqual(await client.request('actions/artifacts/7/zip',{binary:true}),archive);
+});
+
+test('remote evidence failures report a fixed operation and HTTP status without private details',async()=>{
+  const client=githubClient('fixture-only',async()=>new Response('private response marker',{status:415}));
+  await assert.rejects(client.request('actions/artifacts/7/zip',{binary:true}),error=>{
+    assert.deepEqual(releaseFailureEvidence(error),{stage:'workflow',status:'BLOCKED',evidence:{operation:'artifact_download',http_status:415}});
+    assert.ok(!JSON.stringify(error).includes('private response marker'));
+    return true;
+  });
+  const transport=githubClient('fixture-only',async()=>{throw Error('private transport marker');});
+  await assert.rejects(transport.request('actions/artifacts/7/zip',{binary:true}),error=>{
+    assert.deepEqual(releaseFailureEvidence(error),{stage:'workflow',status:'BLOCKED',evidence:{operation:'artifact_download',http_status:null}});
+    assert.ok(!error.message.includes('private transport marker'));
+    return true;
+  });
+  assert.deepEqual(releaseFailureEvidence({operation:'private operation',status:'403',message:'private marker'}),{stage:'workflow',status:'BLOCKED',evidence:{operation:null,http_status:null}});
 });
 
 test('API adapter fails closed and uses fixed-host binary reads and complete pagination',async()=>{
