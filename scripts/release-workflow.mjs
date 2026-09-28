@@ -88,6 +88,12 @@ export function validateMatrix(run,jobs,commit){
     if(matches.length!==1||matches[0].run_attempt!==run.run_attempt||matches[0].head_sha!==commit||matches[0].status!=='completed'||matches[0].conclusion!=='success')fail();
   }
 }
+export function validatePublishHead(head,workflowCommit,sourceCommit,comparison){
+  checkSha(workflowCommit);checkSha(sourceCommit);
+  if(head.commit?.sha!==workflowCommit)fail();
+  if(workflowCommit===sourceCommit)return;
+  if(comparison?.status!=='ahead'||comparison.base_commit?.sha!==sourceCommit||comparison.merge_base_commit?.sha!==sourceCommit||comparison.behind_by!==0||!Number.isSafeInteger(comparison.ahead_by)||comparison.ahead_by<1)fail();
+}
 export function validatePublication(r,id,commit,tagCommit,assets){
   assertAssets(assets);
   if(String(r.id)!==id||r.draft!==false||r.immutable!==true||r.tag_name!=='v1.3.0'||r.prerelease!==false||tagCommit!==commit||!equal(Object.fromEntries(r.assets.map(a=>[a.name,a.digest?.replace(/^sha256:/,'')])),assets)||new Set(r.assets.map(a=>a.name)).size!==r.assets.length)fail();
@@ -124,16 +130,17 @@ async function build(out,source,commit){
 
 // Every URL comes from fixed repository endpoints. Caller data only enters validated
 // path components; no remote URL, executable, shell fragment or source script input.
-const readOperations=['artifact_download','artifact_metadata','workflow_origin','release_asset','repository_evidence'];
+const readOperations=['artifact_download','artifact_metadata','workflow_origin','release_asset','release_metadata','tag_identity','main_head','source_ancestry','repository_evidence'];
 export function releaseFailureEvidence(error){
   return {stage:'workflow',status:'BLOCKED',evidence:{operation:readOperations.includes(error?.operation)?error.operation:null,http_status:Number.isInteger(error?.status)&&error.status>=400&&error.status<=599?error.status:null}};
 }
-export function githubClient(token,transport=fetch){
+export function githubClient(token,transport=fetch,{readOnly=false}={}){
   if(!token)fail();
   async function request(endpoint,{method='GET',body,binary=false,upload=false}={}){
     const base=upload?'https://uploads.github.com':'https://api.github.com';
-    const operation=/^actions\/artifacts\/[1-9]\d*\/zip$/.test(endpoint)?'artifact_download':/^actions\/artifacts\/[1-9]\d*$/.test(endpoint)?'artifact_metadata':/^actions\/(runs|workflows)\//.test(endpoint)?'workflow_origin':/^releases\/(assets|[1-9]\d*\/assets)/.test(endpoint)?'release_asset':'repository_evidence';
+    const operation=/^actions\/artifacts\/[1-9]\d*\/zip$/.test(endpoint)?'artifact_download':/^actions\/artifacts\/[1-9]\d*$/.test(endpoint)?'artifact_metadata':/^actions\/(runs|workflows)\//.test(endpoint)?'workflow_origin':/^releases\/(assets|[1-9]\d*\/assets)/.test(endpoint)?'release_asset':/^releases\/[1-9]\d*$/.test(endpoint)?'release_metadata':/^git\/ref\/tags\//.test(endpoint)?'tag_identity':/^branches\//.test(endpoint)?'main_head':/^compare\//.test(endpoint)?'source_ancestry':'repository_evidence';
     try{
+    if(readOnly&&method!=='GET')fail();
     // Actions archive downloads use the REST media type before their redirect;
     // only release-asset GET requests negotiate application/octet-stream.
     const r=await transport(`${base}/repos/${REPOSITORY.full_name}${endpoint?'/'+endpoint:''}`,{method,signal:AbortSignal.timeout(120000),headers:{Authorization:`Bearer ${token}`,Accept:binary&&method==='GET'&&/^releases\/assets\/[1-9]\d*$/.test(endpoint)?'application/octet-stream':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(body?{'Content-Type':binary?'application/octet-stream':'application/json'}:{})},body:body?(binary?body:JSON.stringify(body)):undefined});
@@ -187,7 +194,7 @@ function attestationCapability(){
   child('gh',['release','verify','--help']);child('gh',['release','verify-asset','--help']);return true;
 }
 async function configuration(client){
-  const configClient=githubClient(process.env.RELEASE_CONFIG_TOKEN||process.env.GH_TOKEN);
+  const configClient=githubClient(process.env.RELEASE_CONFIG_TOKEN||process.env.GH_TOKEN,fetch,{readOnly:true});
   const report=await configurationPreflight(client,configClient,{installation:process.env.PUBLISHER_INSTALLATION_ID,slug:process.env.PUBLISHER_SLUG,capability:attestationCapability});
   console.log(JSON.stringify(report));
   if(report.status!=='READY')fail();return report;
@@ -271,9 +278,9 @@ export async function main(mode){
     validateBuild(b,{},built.assets);await write(path.join(built.folder,'build-evidence.json'),b);
     await fs.cp(built.folder,path.join(ROOT,'candidate-output'),{recursive:true,errorOnExist:true,force:false});return;
   }
-  const client=githubClient(process.env.GH_TOKEN);
+  const client=githubClient(process.env.GH_TOKEN,fetch,{readOnly:!['prepare','publish'].includes(mode)});
   if(mode==='preflight'){
-    const configClient=githubClient(process.env.RELEASE_CONFIG_TOKEN||process.env.GH_TOKEN);
+    const configClient=githubClient(process.env.RELEASE_CONFIG_TOKEN||process.env.GH_TOKEN,fetch,{readOnly:true});
     const report=await configurationPreflight(client,configClient,{installation:process.env.PUBLISHER_INSTALLATION_ID,slug:process.env.PUBLISHER_SLUG,capability:attestationCapability});
     console.log(JSON.stringify(report));await fs.mkdir(path.join(ROOT,'preflight-output'));await write(path.join(ROOT,'preflight-output/configuration.json'),report);
     if(report.status!=='READY')fail();return;
@@ -291,10 +298,17 @@ export async function main(mode){
   await configuration(client);
   const {candidate,b,approval}=await inputs(client,folder,purpose);
   if(mode!=='verify-published'){
-    // Release from the reviewed main HEAD, so the publisher never needs the
-    // broader Workflows:write permission to introduce different workflow code.
     const head=await client.request(`branches/${POLICY.default_branch}`);
-    if(head.commit?.sha!==b.source_commit)fail();
+    if(purpose==='candidate'){
+      // Preparation creates a tag and must still use the exact reviewed main HEAD.
+      if(head.commit?.sha!==b.source_commit)fail();
+    }else{
+      // Publishing consumes an existing exact tag/draft. A repaired main workflow
+      // may descend from the frozen payload source; both commits need real CI.
+      const comparison=context.workflow_sha===b.source_commit?null:await client.request(`compare/${b.source_commit}...${context.workflow_sha}`);
+      validatePublishHead(head,context.workflow_sha,b.source_commit,comparison);
+      if(context.workflow_sha!==b.source_commit)await matrix(client,context.workflow_sha);
+    }
     await matrix(client,b.source_commit);
   }
   if(mode==='prepare-check'){
