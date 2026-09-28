@@ -35,6 +35,17 @@ test('human approval is exact purpose, decision, candidate and final asset bindi
   assert.throws(()=>validateApproval({...approval('candidate'),binding:{...build(),run_attempt:2}},'candidate',build()));
 });
 
+test('API adapter reads the canonical repository root without a trailing slash',async()=>{
+  const root='https://api.github.com/repos/QT7-C23/ChatGPT-Conductor';
+  const calls=[];
+  const client=githubClient('fixture-only',async url=>{
+    calls.push(url);
+    return url===root?Response.json({id:1382745738,default_branch:'main'}):new Response('',{status:404});
+  });
+  assert.deepEqual(await client.request(''),{id:1382745738,default_branch:'main'});
+  assert.deepEqual(calls,[root]);
+});
+
 test('API adapter fails closed and uses fixed-host binary reads and complete pagination',async()=>{
   const calls=[];
   const client=githubClient('local-fixture-token',async(url,options)=>{
@@ -92,7 +103,7 @@ test('actual workflow structures isolate candidate execution from write permissi
   assert.deepEqual(verify.jobs.verify.strategy.matrix,{os:['ubuntu-latest','windows-latest'],node:[22,24]});
   assert.deepEqual(verify.jobs.verify.steps.slice(-2).map(s=>s.run),['npm ci --ignore-scripts','node scripts/verify.mjs']);
   const publish=await workflow('publish-release');assert.equal(publish.jobs.verify.needs,'publish');assert.equal(publish.jobs.verify.permissions.contents,'read');
-  assert.equal(POLICY.license,'MIT');assert.equal(POLICY.public_evidence_approval,null);
+  assert.equal(POLICY.license,'MIT');assert.equal(POLICY.public_evidence_approval,'owner-public-scope/v1.3.0/2026-09-28');
   assert.deepEqual(POLICY.reviewers,['QT7-C23']);assert.equal(POLICY.publisher_integration_id,5109993);
   validatePublisher('165834076','qt7-c23-conductor-publisher');
   assert.throws(()=>validatePublisher('1','qt7-c23-conductor-publisher'));
@@ -176,17 +187,34 @@ test('live configuration preflight reads fixed endpoints and preserves inaccessi
   const data={'':{id:1382745738,default_branch:'main'},'immutable-releases':{enabled:true},'environments/release-approval':{can_admins_bypass:false,protection_rules:[{type:'required_reviewers',prevent_self_review:false,reviewers:[{reviewer:{login:'QT7-C23'}}]}],deployment_branch_policy:{protected_branches:false,custom_branch_policies:true}},'environments/release-approval/deployment-branch-policies?per_page=100&page=1':{total_count:1,branch_policies:[{name:'main',type:'branch'}]},'rulesets/24122310':main,'rulesets/11':{...tag,rules:[{type:'creation'}],bypass_actors:[{actor_id:5109993,actor_type:'Integration',bypass_mode:'always'}]},'rulesets/12':{...tag,rules:[{type:'update'},{type:'deletion'}],bypass_actors:[]}};
   const calls=[];
   const client=githubClient('fixture-only',async(url,options)=>{
-    calls.push({url,method:options.method});const endpoint=url.split('/ChatGPT-Conductor/')[1];
+    calls.push({url,method:options.method});
+    const root='https://api.github.com/repos/QT7-C23/ChatGPT-Conductor';
+    if(url===root+'/')return new Response('',{status:404});
+    const endpoint=url===root?'':url.startsWith(root+'/')?url.slice(root.length+1):null;
     return Object.hasOwn(data,endpoint)?Response.json(data[endpoint]):new Response('',{status:403});
   });
   const options={config,installation:'165834076',slug:'qt7-c23-conductor-publisher',capability:()=>true};
-  assert.equal((await configurationPreflight(client,client,options)).status,'READY');
+  const ready=await configurationPreflight(client,client,options);
+  assert.equal(ready.status,'READY');assert.deepEqual(ready.evidence,{read_failures:[],hidden_bypass_rulesets:[]});
+  assert.equal((await configurationPreflight(client,client,{...options,config:{...config,public_evidence_approval:null}})).gates.public_evidence_approval,false);
   assert.ok(calls.every(c=>c.method==='GET'),'preflight cannot mutate remote state');
   delete data['rulesets/11'].bypass_actors;
   const hidden=await configurationPreflight(client,client,options);
   assert.equal(hidden.gates.repository_protection,null);assert.equal(hidden.status,'UNKNOWN');
+  assert.deepEqual(hidden.evidence.hidden_bypass_rulesets,['11']);
   delete data['immutable-releases'];
-  assert.equal((await configurationPreflight(client,client,options)).gates.immutable_releases,null);
+  const inaccessible=await configurationPreflight(client,client,options);
+  assert.equal(inaccessible.gates.immutable_releases,null);
+  assert.deepEqual(inaccessible.evidence.read_failures,[{gate:'immutable_releases',status:403}]);
+  const creation=data['rulesets/11'];delete data['rulesets/11'];
+  const missingRuleset=await configurationPreflight(client,client,options);
+  assert.equal(missingRuleset.gates.repository_protection,null);
+  assert.deepEqual(missingRuleset.evidence.read_failures,[{gate:'immutable_releases',status:403},{gate:'repository_protection',ruleset_id:'11',status:403}]);
+  data['rulesets/11']=creation;
+  const privateError=await configurationPreflight(client,client,{...options,capability:()=>{throw Error('PRIVATE_DO_NOT_LOG');}});
+  assert.equal(privateError.gates.attestation_capability,null);
+  assert.deepEqual(privateError.evidence.read_failures[0],{gate:'attestation_capability',status:null});
+  assert.doesNotMatch(JSON.stringify(privateError),/PRIVATE_DO_NOT_LOG|fixture-only/);
   data['immutable-releases']={enabled:false};
   assert.equal((await configurationPreflight(client,client,options)).status,'BLOCKED');
   data['rulesets/11'].bypass_actors=[];

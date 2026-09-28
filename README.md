@@ -8,7 +8,7 @@ ChatGPT Conductor is a portable skill for handing projects between **Chat** (dis
 
 Version **1.3.0** includes a separate distribution CLI for installation, updates, rollback, explicit legacy-data migration and recovery. Release workflows use a dedicated publisher App and two approvals from one owner: one for the candidate and another for publishing the exact reviewed draft. Release approval does not grant authority to execute a project task.
 
-**Release status:** 1.3.0 is a local candidate, not a published or installable GitHub Release. Exact `v1.3.0` tag creation and immutable rules are configured; older `v1.2.0` protection is preserved. Repository Release immutability is enabled. Publisher credential setup, live configuration preflight and the two owner decisions remain pending. Changing the project version does not create a tag or publish a Release.
+**Release status:** 1.3.0 has a verified GitHub candidate build, but has not been published as a GitHub Release. Exact `v1.3.0` tag creation and immutable rules are configured; older `v1.2.0` protection is preserved. Repository Release immutability is enabled. Publisher authentication and public scope consent are confirmed; complete live configuration preflight and the two owner decisions remain pending. Changing the project version does not create a tag or publish a Release.
 
 ### Quick start
 
@@ -50,7 +50,7 @@ Start with [SKILL.md](SKILL.md), the [Execution Packet](templates/execution-pack
 
 本版将分发 CLI、精确 Release 身份及摘要绑定、安装/更新/回滚/显式旧数据迁移与恢复，以及单维护者两阶段发布审批方案纳入 1.3.0。任务执行批准和发布批准仍相互独立，原有 schema 2 与 `po-1.1.3` 数据合同保持不变。
 
-**尚未发布**：1.3.0 是本地候选版本。已配置仅匹配 `v1.3.0` 的创建及不可变 tag 规则，并启用仓库 Release 不可变保护；原有 `v1.2.0` 规则继续保留。publisher 私钥配置、真实配置 Preflight 和两阶段 owner approval 仍待完成。修改项目版本号不会自动创建 tag 或发布 Release。分发与发布边界见 [分发指南](docs/design/distribution.md) 和 [发布流程](docs/design/release-process.md)。
+**尚未发布**：1.3.0 已完成真实 GitHub 候选构建。已配置仅匹配 `v1.3.0` 的创建及不可变 tag 规则，并启用仓库 Release 不可变保护；原有 `v1.2.0` 规则继续保留。publisher 认证及公开范围许可已确认，完整配置 Preflight 和两阶段 owner approval 仍待完成。修改项目版本号不会自动创建 tag 或发布 Release。分发与发布边界见 [分发指南](docs/design/distribution.md) 和 [发布流程](docs/design/release-process.md)。
 
 ## V1.1.3 修订
 

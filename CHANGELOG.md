@@ -4,7 +4,9 @@
 
 发布接入改为专用 GitHub App：只为 prepare/publish 签发 Contents:write 短期 token，其余发布任务显式请求只读权限；内置 GITHUB_TOKEN 均只读。预检准确读取 main ruleset、四个 GitHub Actions 检查和零审批 PR 规则，拒绝管理员绕过审批环境；新增只读配置预检报告，缺失 bypass 信息保持 UNKNOWN。创建 tag 和发布前复核当前 main HEAD 及完整 CI。
 
-本次版本调整不构成发布。现有 `v1.2.0` tag 保护继续保留，已新增仅保护 `v1.3.0` 的创建及不可变规则，并启用仓库 Release 不可变保护。publisher 私钥配置、证据公开许可、真实 Preflight 和两阶段 owner approval 仍须完成。
+修复配置预检的仓库根 API 地址，避免结尾斜杠导致 404；新增不含敏感信息的读取失败与缺失 bypass 诊断，UNKNOWN 仍不能通过发布门禁。
+
+本次版本调整不构成发布。现有 `v1.2.0` tag 保护继续保留，已新增仅保护 `v1.3.0` 的创建及不可变规则，并启用仓库 Release 不可变保护。publisher 认证及证据公开许可已确认，完整 Preflight 和两阶段 owner approval 仍须完成。
 
 ## 保留的 V1.2.0 候选记录
 
