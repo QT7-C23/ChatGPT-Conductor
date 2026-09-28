@@ -6,7 +6,7 @@ import os from 'node:os';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {buildCandidate,finalizeManifest} from '../scripts/package-release.mjs';
-import {validateBuild,validateApproval,validateConfiguration,validatePublisher,configurationPreflight,validateRepositoryProtection,validateMatrix,validatePublication,validateFinalFiles,releasePreflight,postPublishVerification,releaseFailureEvidence,sha256,githubClient,POLICY,ENVIRONMENTS} from '../scripts/release-workflow.mjs';
+import {validateBuild,validateApproval,validateConfiguration,validatePublisher,configurationPreflight,validateRepositoryProtection,validateMatrix,validatePublishHead,validatePublication,validateFinalFiles,releasePreflight,postPublishVerification,releaseFailureEvidence,sha256,githubClient,POLICY,ENVIRONMENTS} from '../scripts/release-workflow.mjs';
 
 const sha='a'.repeat(40), digest='b'.repeat(64);
 const identity={repository:'QT7-C23/ChatGPT-Conductor',workflow:'.github/workflows/package-candidate.yml',workflow_ref:'refs/heads/main',workflow_sha:'c'.repeat(40),run_id:'42',run_attempt:1,source_commit:sha};
@@ -90,13 +90,46 @@ test('API adapter fails closed and uses fixed-host binary reads and complete pag
 
 const read=async p=>fs.readFile(new URL('../'+p,import.meta.url),'utf8');
 const workflow=async n=>JSON.parse(await read(`.github/workflows/${n}.yml`));
+
+test('draft publication check requests draft visibility while the built-in token stays read-only',async()=>{
+  const w=await workflow('publish-release');
+  assert.equal(w.jobs.check.steps.find(s=>s.id==='publisher').with['permission-contents'],'write');
+  assert.equal(w.jobs.check.permissions.contents,'read');
+  assert.equal(w.jobs.verify.steps.find(s=>s.id==='publisher').with['permission-contents'],'read');
+});
+
+test('publication requires current trusted main and ancestry of the unchanged payload source',()=>{
+  const current='c'.repeat(40),head={commit:{sha:current}};
+  const comparison={status:'ahead',base_commit:{sha},merge_base_commit:{sha},behind_by:0,ahead_by:2};
+  validatePublishHead(head,current,sha,comparison);
+  validatePublishHead({commit:{sha}},sha,sha,null);
+  assert.throws(()=>validatePublishHead({commit:{sha}},current,sha,comparison));
+  for(const change of [{status:'diverged'},{status:'behind'},{base_commit:{sha:current}},{merge_base_commit:{sha:current}},{behind_by:1},{ahead_by:0},{ahead_by:null}])assert.throws(()=>validatePublishHead(head,current,sha,{...comparison,...change}));
+  assert.throws(()=>validatePublishHead(head,current,sha,null));
+});
+
+test('read-only evidence clients cannot write even when their credential can see a draft',async()=>{
+  const calls=[];
+  const client=githubClient('fixture-only',async(url,options)=>{calls.push(options.method);return Response.json({id:7,draft:true});},{readOnly:true});
+  assert.deepEqual(await client.request('releases/7'),{id:7,draft:true});
+  for(const method of ['PATCH','POST','DELETE','PUT'])await assert.rejects(client.request('releases/7',{method,body:{draft:false}}));
+  assert.deepEqual(calls,['GET']);
+});
+
+test('draft metadata permission failures are distinguished without exposing endpoint or response data',async()=>{
+  const client=githubClient('fixture-only',async()=>new Response('private response marker',{status:403}),{readOnly:true});
+  await assert.rejects(client.request('releases/7'),error=>{
+    assert.deepEqual(releaseFailureEvidence(error),{stage:'workflow',status:'BLOCKED',evidence:{operation:'release_metadata',http_status:403}});
+    assert.ok(!JSON.stringify(error).includes('private response marker'));return true;
+  });
+});
 test('actual workflow structures isolate candidate execution from write permissions and bind default workflow code',async()=>{
   const pins=new Set(['actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1','actions/setup-node@820762786026740c76f36085b0efc47a31fe5020','actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a','actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1']);
   for(const name of ['verify','package-candidate','approve-release','prepare-release','publish-release','verify-published','preflight-release']){
     const w=await workflow(name);
     assert.equal(w.permissions.contents,'read');assert.equal(w.on.pull_request_target,undefined);
     if(name!=='verify')assert.deepEqual(Object.keys(w.on),['workflow_dispatch']);
-    for(const job of Object.values(w.jobs)){
+    for(const [jobName,job] of Object.entries(w.jobs)){
       if(name!=='verify')assert.ok(job.if.includes('github.event.repository.default_branch'));
       for(const step of job.steps){
         if(step.uses)assert.ok(pins.has(step.uses),step.uses);
@@ -118,7 +151,8 @@ test('actual workflow structures isolate candidate execution from write permissi
       }else assert.ok(['verify','package-candidate'].includes(name));
       if(publisher?.with['permission-contents']==='write'){
         assert.equal(job.environment,undefined,'write jobs consume the protected approval receipt without a second environment prompt');
-        assert.equal(job.needs,'check');
+        if(name==='publish-release'&&jobName==='check')assert.equal(job.needs,undefined);
+        else assert.equal(job.needs,'check');
         const checkouts=job.steps.filter(s=>s.uses?.startsWith('actions/checkout@'));
         assert.equal(checkouts.length,1);assert.equal(checkouts[0].with.ref,'${{ github.sha }}');assert.equal(checkouts[0].with.path,'trusted');
         assert.equal(job.steps.filter(s=>s.run?.startsWith('node ')).length,1);

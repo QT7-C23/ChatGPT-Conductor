@@ -91,7 +91,7 @@
             "private-key": "${{ secrets.CONDUCTOR_PUBLISHER_PRIVATE_KEY }}",
             "owner": "QT7-C23",
             "repositories": "ChatGPT-Conductor",
-            "permission-contents": "read",
+            "permission-contents": "write",
             "permission-actions": "read",
             "permission-administration": "read"
           }

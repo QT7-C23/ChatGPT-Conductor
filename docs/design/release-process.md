@@ -33,8 +33,11 @@ The installation covers only `ChatGPT-Conductor`, with Contents:write,
 Actions:read and Administration:read (Metadata:read is automatic).
 
 Each trusted release job mints its own token for this repository. Read jobs
-explicitly request Contents:read; only the prepare/publish writers request
-Contents:write. All built-in `GITHUB_TOKEN` permissions stay read-only.
+request Contents:read except `publish-release.check`: draft visibility requires
+push access, so it requests the App's already-granted Contents:write permission.
+The helper nevertheless rejects every non-GET request in check, approval,
+configuration and verification modes. Only prepare/publish writer modes may
+send mutations. All built-in `GITHUB_TOKEN` permissions stay read-only.
 Tokens are revoked by the action at job end. The helper checks the action's
 installation ID and App slug against trusted policy. Candidate verification
 children receive no credential environment variables.
@@ -104,7 +107,8 @@ argument arrays, never shell expressions.
 
 Actions archive requests use `application/vnd.github+json` at the REST download
 endpoint; release-asset byte requests use `application/octet-stream`. Remote-read
-failures report only a fixed operation label and an HTTP status when available,
+failures report only a fixed operation label (including draft metadata, main
+HEAD, tag identity and source ancestry) and an HTTP status when available,
 never credentials, response bodies, signed download URLs or transport messages.
 
 ## Draft preparation
@@ -114,8 +118,8 @@ artifact IDs and archive digests. Its protected read-only check job rebuilds and
 verifies the actual candidate and compares approved hashes. The dependent writer
 checks out only trusted default workflow source, reauthenticates both artifacts,
 and rechecks remote configuration, current main HEAD and the latest exact-source
-four-matrix CI run. The reviewed source must still be main HEAD for preparation
-and publication, avoiding a need for Workflows:write. It creates a new lightweight `refs/tags/v1.3.0`
+four-matrix CI run. The reviewed source must still be main HEAD for preparation,
+avoiding a need for Workflows:write when creating the tag and draft. It creates a new lightweight `refs/tags/v1.3.0`
 at the exact candidate commit; existing tags cause refusal, never force/reuse.
 It creates a draft, obtains the real ID, generates the external manifest through
 the existing packager and uploads only ZIP, CHANGELOG.md, release-manifest.json
@@ -140,9 +144,15 @@ approval #1. References in packet JSON are evidence labels; they cannot create
 either approval.
 
 Dispatch `publish-release` with that approval artifact and the exact draft ID.
-The read-only check and writer require the latest verify run for
-the candidate SHA to be completed/successful, with all four matrix jobs from its
-current attempt. Pagination is complete or rejected. The tag must still point
+The read-only check and writer require current main HEAD to equal the trusted
+workflow run SHA. A workflow repair may advance main after draft preparation:
+GitHub's comparison must prove that the unchanged approved candidate source is
+an ancestor of that workflow SHA, and the latest exact-source verify runs for
+both commits must be completed/successful with all four matrix jobs from their
+current attempts. A moved main HEAD, unrelated source or failed/missing CI blocks
+publication. This separates operational workflow repairs from frozen payload
+bytes; it does not change the candidate, tag, draft or either approval receipt.
+Pagination is complete or rejected. The tag must still point
 to the exact commit. Downloaded manifest fields and SHA256SUMS must match the
 approved candidate and actual draft ID. Only then can the writer set draft=false.
 The separate read-only post job checks immutable=true, exact tag/asset set/hashes,
@@ -241,6 +251,9 @@ checked during implementation. App authentication follows the official
 [GitHub App Actions guidance](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/making-authenticated-api-requests-with-a-github-app-in-a-github-actions-workflow).
 Immutable publication generates a release attestation as described by
 [GitHub](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases).
+Draft visibility follows the [release API](https://docs.github.com/en/rest/releases/releases#list-releases):
+only callers with push access can see drafts. Publication ancestry uses the
+[commit comparison API](https://docs.github.com/en/rest/commits/commits#compare-two-commits).
 
 ## Single-maintainer policy migration
 
