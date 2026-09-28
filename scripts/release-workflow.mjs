@@ -8,9 +8,9 @@ import {canonicalJson,validateManifest} from './distribution/contracts.mjs';
 import {REPOSITORY} from './distribution/source.mjs';
 import {finalizeManifest} from './package-release.mjs';
 
-// Verified identities are fixed in trusted code. Public-evidence consent remains
-// unset; dispatch inputs cannot replace policy or prove remote settings.
-export const POLICY=Object.freeze({license:'MIT',public_evidence_approval:null,reviewers:['QT7-C23'],default_branch:'main',main_ruleset:'24122310',tag_creation_ruleset:'24127483',tag_protection_ruleset:'24127202',publisher_integration_id:5109993,publisher_installation_id:'165834076',publisher_slug:'qt7-c23-conductor-publisher'});
+// Verified identities and the owner's recorded public scope are fixed in trusted
+// code; dispatch inputs cannot replace policy or prove remote settings.
+export const POLICY=Object.freeze({license:'MIT',public_evidence_approval:'owner-public-scope/v1.3.0/2026-09-28',reviewers:['QT7-C23'],default_branch:'main',main_ruleset:'24122310',tag_creation_ruleset:'24127483',tag_protection_ruleset:'24127202',publisher_integration_id:5109993,publisher_installation_id:'165834076',publisher_slug:'qt7-c23-conductor-publisher'});
 export const ENVIRONMENTS=Object.freeze({approval:'release-approval'});
 const ROOT=path.resolve(fileURLToPath(new URL('..',import.meta.url)));
 const HEX40=/^[0-9a-f]{40}$/,HEX64=/^[0-9a-f]{64}$/,ID=/^[1-9][0-9]*$/;
@@ -128,7 +128,7 @@ export function githubClient(token,transport=fetch){
   if(!token)fail();
   async function request(endpoint,{method='GET',body,binary=false,upload=false}={}){
     const base=upload?'https://uploads.github.com':'https://api.github.com';
-    const r=await transport(`${base}/repos/${REPOSITORY.full_name}/${endpoint}`,{method,signal:AbortSignal.timeout(120000),headers:{Authorization:`Bearer ${token}`,Accept:binary&&method==='GET'?'application/octet-stream':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(body?{'Content-Type':binary?'application/octet-stream':'application/json'}:{})},body:body?(binary?body:JSON.stringify(body)):undefined});
+    const r=await transport(`${base}/repos/${REPOSITORY.full_name}${endpoint?'/'+endpoint:''}`,{method,signal:AbortSignal.timeout(120000),headers:{Authorization:`Bearer ${token}`,Accept:binary&&method==='GET'?'application/octet-stream':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(body?{'Content-Type':binary?'application/octet-stream':'application/json'}:{})},body:body?(binary?body:JSON.stringify(body)):undefined});
     if(!r.ok){const error=Error('GitHub evidence could not be read');error.name='GitHubReadError';error.status=r.status;throw error;}if(r.status===204)return null;
     if(Number(r.headers.get('content-length')??0)>40*1024*1024)fail();
     const data=Buffer.from(await r.arrayBuffer());if(data.length>40*1024*1024)fail();
@@ -143,23 +143,32 @@ export function githubClient(token,transport=fetch){
 }
 export async function configurationPreflight(client,configClient,{config=POLICY,installation,slug,capability}={}){
   const gates={license:config.license==='MIT',public_evidence_approval:typeof config.public_evidence_approval==='string'&&config.public_evidence_approval.length>0,publisher_identity:false,repository_identity:null,immutable_releases:null,owner_environment:null,repository_protection:null,attestation_capability:null};
+  const evidence={read_failures:[],hidden_bypass_rulesets:[]};
+  const unreadable=(gate,error,ruleset_id)=>evidence.read_failures.push({gate,...(ruleset_id?{ruleset_id}:{}),status:Number.isInteger(error?.status)&&error.status>=400&&error.status<=599?error.status:null});
   try{validatePublisher(installation,slug,config);gates.publisher_identity=true;}catch{}
   // Fetch before validating: unreadable evidence stays UNKNOWN, while a known
   // policy mismatch is BLOCKED. Missing bypass_actors is never treated as [].
-  async function probe(name,read,validate){let value;try{value=await read();}catch{return;}try{validate(value);gates[name]=true;}catch{gates[name]=false;}}
+  async function probe(name,read,validate){let value;try{value=await read();}catch(error){unreadable(name,error);return;}try{validate(value);gates[name]=true;}catch{gates[name]=false;}}
   await Promise.all([
     probe('repository_identity',()=>client.request(''),repo=>{if(String(repo.id)!==REPOSITORY.id||repo.default_branch!==config.default_branch)fail();}),
     probe('immutable_releases',()=>configClient.request('immutable-releases'),v=>{if(v.enabled!==true)fail();}),
     probe('owner_environment',async()=>Promise.all([client.request(`environments/${ENVIRONMENTS.approval}`),client.list(`environments/${ENVIRONMENTS.approval}/deployment-branch-policies`,'branch_policies')]),([env,branches])=>validateOwnerEnvironment(config,env,branches)),
     (async()=>{
       if(![config.main_ruleset,config.tag_creation_ruleset,config.tag_protection_ruleset].every(id=>typeof id==='string'&&ID.test(id))){gates.repository_protection=false;return;}
-      let rules;try{rules=await Promise.all([config.main_ruleset,config.tag_creation_ruleset,config.tag_protection_ruleset].map(id=>configClient.request(`rulesets/${id}`)));}catch{return;}
-      if(rules.some(r=>!Array.isArray(r?.bypass_actors)))return;
+      const ids=[config.main_ruleset,config.tag_creation_ruleset,config.tag_protection_ruleset];
+      const results=await Promise.allSettled(ids.map(id=>configClient.request(`rulesets/${id}`)));
+      for(const [i,result] of results.entries()){
+        if(result.status==='rejected')unreadable('repository_protection',result.reason,ids[i]);
+        else if(!Array.isArray(result.value?.bypass_actors))evidence.hidden_bypass_rulesets.push(ids[i]);
+      }
+      if(results.some(r=>r.status==='rejected')||evidence.hidden_bypass_rulesets.length)return;
+      const rules=results.map(r=>r.value);
       try{validateRepositoryProtection(...rules,config.publisher_integration_id);gates.repository_protection=true;}catch{gates.repository_protection=false;}
     })(),
     probe('attestation_capability',async()=>capability(),v=>{if(v!==true)fail();})
   ]);
-  return {stage:'configuration',...releasePreflight(gates)};
+  evidence.read_failures.sort((a,b)=>a.gate.localeCompare(b.gate)||(a.ruleset_id??'').localeCompare(b.ruleset_id??''));
+  return {stage:'configuration',...releasePreflight(gates),evidence};
 }
 function attestationCapability(){
   child('gh',['release','verify','--help']);child('gh',['release','verify-asset','--help']);return true;

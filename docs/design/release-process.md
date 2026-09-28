@@ -1,9 +1,16 @@
 # Release workflow and live configuration
 
-The release workflows have not yet run on GitHub. The package remains private
-for npm; the project license is MIT. `POLICY` in `scripts/release-workflow.mjs`
+The candidate and configuration workflows have run on GitHub; no Release has
+been published. The package remains private for npm; the project license is MIT.
+`POLICY` in `scripts/release-workflow.mjs`
 records the verified owner, main ruleset and dedicated publisher identity.
-Public-evidence consent remains unset. Approval, draft and publication paths fail closed until policy and live
+The owner approved public scope on 2026-09-28, recorded as
+`owner-public-scope/v1.3.0/2026-09-28`: skill code, documentation, examples,
+tests, pinned dependencies and licenses. Release assets are limited to
+`chatgpt-conductor-1.3.0.zip`, `CHANGELOG.md`, `release-manifest.json` and
+`SHA256SUMS`. Private keys, tokens, chat records, personal files and local run
+logs are excluded. This scope decision does not approve a candidate or publication.
+Approval, draft and publication paths fail closed until policy and live
 configuration checks pass. The V1.3.0 profile is single-maintainer: one allowlisted
 owner approves the two explicit release stages; an independent PR reviewer is not required.
 An environment name or repository variable alone is never accepted as protection.
@@ -12,8 +19,9 @@ The local product and packaging target is 1.3.0. The older exact `v1.2.0`
 rulesets are preserved. Each new version needs its own exact creation and
 immutable tag rules; changing a package version does not extend protection.
 The release jobs now use the registered publisher App via the official pinned
-`actions/create-github-app-token` action. Credential setup and a successful live
-preflight are still required. Do not reuse 1.2.0 candidate or approval evidence.
+`actions/create-github-app-token` action. Publisher authentication succeeded in
+configuration run `36456454954`; a successful complete live preflight and both
+owner decisions are still required. Do not reuse 1.2.0 candidate or approval evidence.
 
 ## Publisher authentication and configuration preflight
 
@@ -38,6 +46,9 @@ releases, owner environment, exact main/tag rules and local `gh` verification
 command support. Its `stage=configuration` READY is only configuration readiness;
 candidate CI, deterministic bytes and both owner decisions are checked by their
 later gates. Command support does not prove a release attestation already exists.
+Unreadable evidence includes only the gate, optional ruleset ID and HTTP status
+(or null for a transport failure). Missing bypass arrays are listed by ruleset
+ID. Raw errors, response bodies and credentials are not included in the report.
 
 Bypass actor visibility must be tested with the actual installation token.
 GitHub documents that this property can be omitted for callers lacking ruleset
