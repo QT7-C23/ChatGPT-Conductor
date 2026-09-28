@@ -32,7 +32,7 @@
         "contents": "read",
         "actions": "read"
       },
-      "environment": "release-candidate-approval",
+      "environment": "release-approval",
       "steps": [
         {
           "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
@@ -83,7 +83,7 @@
         "contents": "read",
         "actions": "read"
       },
-      "environment": "release-publish",
+      "environment": "release-approval",
       "steps": [
         {
           "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",

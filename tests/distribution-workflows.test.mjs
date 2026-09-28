@@ -6,7 +6,7 @@ import os from 'node:os';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {buildCandidate,finalizeManifest} from '../scripts/package-release.mjs';
-import {validateBuild,validateApproval,validateConfiguration,validateRepositoryProtection,validateMatrix,validatePublication,validateFinalFiles,sha256,githubClient,POLICY,ENVIRONMENTS} from '../scripts/release-workflow.mjs';
+import {validateBuild,validateApproval,validateConfiguration,validateRepositoryProtection,validateMatrix,validatePublication,validateFinalFiles,releasePreflight,postPublishVerification,sha256,githubClient,POLICY,ENVIRONMENTS} from '../scripts/release-workflow.mjs';
 
 const sha='a'.repeat(40), digest='b'.repeat(64);
 const identity={repository:'QT7-C23/ChatGPT-Conductor',workflow:'.github/workflows/package-candidate.yml',workflow_ref:'refs/heads/main',workflow_sha:'c'.repeat(40),run_id:'42',run_attempt:1,source_commit:sha};
@@ -23,8 +23,11 @@ test('candidate evidence binds workflow origin separately from reviewed checkout
 });
 test('human approval is exact purpose, decision, candidate and final asset binding',()=>{
   assert.deepEqual(validateApproval(approval('candidate'),'candidate',build()),approval('candidate'));
+  assert.throws(()=>validateApproval(null,'candidate',build()));
+  assert.throws(()=>validateApproval({...approval('candidate'),task_authorization:true},'candidate',build()));
   const final=approval('publish');
   validateApproval(final,'publish',build(),'7',final.final_assets);
+  assert.throws(()=>validateApproval(null,'publish',build(),'7',final.final_assets));
   for(const change of [{decision:'APPROVE'},{draft_id:'8'},{final_assets:assets},{binding:{...build(),source_commit:'e'.repeat(40)}},{purpose:'candidate'},{accept_ref:null},{publish_ref:null},{publish_ref:final.accept_ref}])assert.throws(()=>validateApproval({...final,...change},'publish',build(),'7',final.final_assets));
   const altered={...final.final_assets,'CHANGELOG.md':'9'.repeat(64)};
   assert.throws(()=>validateApproval({...final,final_assets:altered},'publish',build(),'7',altered));
@@ -64,7 +67,7 @@ test('actual workflow structures isolate candidate execution from write permissi
         if(step.uses?.startsWith('actions/upload-artifact@')){assert.equal(step.with.archive,true);assert.equal(step.with.overwrite,false);assert.equal(step.with['if-no-files-found'],'error');assert.ok(!step.with.path.includes('*'));}
       }
       if(job.permissions?.contents==='write'){
-        assert.ok(['release-prepare','release-publish'].includes(job.environment));
+        assert.equal(job.environment,undefined,'write jobs consume the protected approval receipt without a second environment prompt');
         assert.equal(job.needs,'check');
         const checkouts=job.steps.filter(s=>s.uses?.startsWith('actions/checkout@'));
         assert.equal(checkouts.length,1);assert.equal(checkouts[0].with.ref,'${{ github.sha }}');assert.equal(checkouts[0].with.path,'trusted');
@@ -77,7 +80,10 @@ test('actual workflow structures isolate candidate execution from write permissi
   assert.deepEqual(verify.jobs.verify.steps.slice(-2).map(s=>s.run),['npm ci --ignore-scripts','node scripts/verify.mjs']);
   const publish=await workflow('publish-release');assert.equal(publish.jobs.verify.needs,'publish');assert.equal(publish.jobs.verify.permissions.contents,'read');
   assert.equal(POLICY.license,'MIT');assert.equal(POLICY.public_evidence_approval,null);
-  assert.notEqual(ENVIRONMENTS.prepare,ENVIRONMENTS.publish);
+  assert.deepEqual(ENVIRONMENTS,{approval:'release-approval'});
+  const approvals=await workflow('approve-release');
+  assert.deepEqual(Object.values(approvals.jobs).map(job=>job.environment),['release-approval','release-approval']);
+  for(const name of ['prepare-release','publish-release','verify-published'])for(const job of Object.values((await workflow(name)).jobs))assert.equal(job.environment,undefined);
 });
 test('all allowlisted product paths preserve committed bytes including immutable legacy fixture',async()=>{
   const list=JSON.parse(await read('scripts/distribution/product-files.json'));
@@ -106,21 +112,21 @@ test('actual helper process rejects shell-like inputs and missing trusted contex
   const result=spawnSync(process.execPath,['scripts/release-workflow.mjs',`publish; ${marker}`],{cwd:root,encoding:'utf8',shell:false,env:{...process.env,GITHUB_REPOSITORY:'wrong/repository',CANDIDATE_COMMIT:`$(echo ${marker})`}});
   assert.equal(result.status,1);assert.doesNotMatch(result.stdout+result.stderr,new RegExp(marker));assert.match(result.stderr,/workflow blocked/);
 });
-test('configuration requires observed immutability, reviewer protection, exact branch and license approval',()=>{
+test('single-owner configuration requires one allowlisted reviewer, owner self-review and exact branch',()=>{
   const config={license:'MIT',public_evidence_approval:'approved-123',reviewers:['alice'],default_branch:'main'};
   const env={protection_rules:[{type:'required_reviewers',prevent_self_review:true,reviewers:[{reviewer:{login:'alice'}}]}],deployment_branch_policy:{protected_branches:false,custom_branch_policies:true}};
   const policies=[{name:'main',type:'branch'}];
-  validateConfiguration(config,{enabled:true},env,policies);
   const singleOwner={...env,protection_rules:[{...env.protection_rules[0],prevent_self_review:false}]};
-  assert.deepEqual(validateConfiguration(config,{enabled:true},singleOwner,policies),{prevent_self_review:false,reviewers:['alice']});
-  for(const c of [{...config,license:null},{...config,public_evidence_approval:null},{...config,reviewers:[]}])assert.throws(()=>validateConfiguration(c,{enabled:true},env,policies));
+  assert.deepEqual(validateConfiguration(config,{enabled:true},singleOwner,policies),{prevent_self_review:false,required_reviewers:1});
+  for(const c of [{...config,license:null},{...config,public_evidence_approval:null},{...config,reviewers:[]},{...config,reviewers:['alice','bob']}])assert.throws(()=>validateConfiguration(c,{enabled:true},singleOwner,policies));
   assert.throws(()=>validateConfiguration(config,{enabled:false},env,policies));
   assert.throws(()=>validateConfiguration(config,{enabled:true},{...env,protection_rules:[]},policies));
   assert.throws(()=>validateConfiguration(config,{enabled:true},env,[{name:'*',type:'branch'}]));
+  assert.throws(()=>validateConfiguration(config,{enabled:true},{...singleOwner,protection_rules:[{...singleOwner.protection_rules[0],reviewers:[{reviewer:{login:'alice'}},{reviewer:{login:'bob'}}]}]},policies));
 });
-test('repository protection proves required matrix, PR review and separate exact tag creation and no-mutation rules',()=>{
+test('repository protection proves required matrix, no-force/delete and exact tag rules without requiring another PR reviewer',()=>{
   const contexts=['ubuntu-latest','windows-latest'].flatMap(os=>[22,24].map(n=>`verify (${os}, ${n})`));
-  const branch={enforce_admins:{enabled:true},required_pull_request_reviews:{required_approving_review_count:1},required_status_checks:{strict:true,contexts},allow_force_pushes:{enabled:false},allow_deletions:{enabled:false}};
+  const branch={enforce_admins:{enabled:true},required_status_checks:{strict:true,contexts},allow_force_pushes:{enabled:false},allow_deletions:{enabled:false}};
   const tag={target:'tag',enforcement:'active',conditions:{ref_name:{include:['refs/tags/v1.2.0'],exclude:[]}}};
   const creation={...tag,rules:[{type:'creation'}],bypass_actors:[{actor_id:123,actor_type:'Integration',bypass_mode:'always'}]};
   const protection={...tag,rules:[{type:'update'},{type:'deletion'}],bypass_actors:[]};
@@ -129,6 +135,32 @@ test('repository protection proves required matrix, PR review and separate exact
   assert.throws(()=>validateRepositoryProtection(branch,{...creation,enforcement:'evaluate'},protection,123));
   assert.throws(()=>validateRepositoryProtection(branch,creation,{...protection,bypass_actors:creation.bypass_actors},123));
   assert.throws(()=>validateRepositoryProtection(branch,creation,protection,456));
+});
+test('release preflight checks attestation capability, not the post-publish attestation result',()=>{
+  const required={source_identity:true,local_verify:true,github_matrix:true,deterministic_candidate:true,owner_prepare_approval:true,owner_publish_approval:true,attestation_capability:true,immutable_releases:true,branch_protection:true};
+  assert.equal(releasePreflight(required).status,'READY');
+  assert.equal(releasePreflight({...required,github_matrix:false}).status,'BLOCKED');
+  assert.equal(releasePreflight({...required,immutable_releases:null}).status,'UNKNOWN');
+  assert.equal(releasePreflight({...required,attestation_capability:null,branch_protection:false}).status,'BLOCKED');
+  assert.throws(()=>releasePreflight({...required,attestation:false}));
+  assert.throws(()=>releasePreflight({}));
+  assert.throws(()=>releasePreflight({...required,source_identity:'yes'}));
+});
+test('post-publish verification failure is published-unverified and not installable',()=>{
+  const passed={published:true,release_identity:true,asset_bytes:true,attestation:true};
+  assert.deepEqual(postPublishVerification(passed),{status:'VERIFIED',verification:'READY',installable:true,gates:passed});
+  for(const gates of [
+    {...passed,attestation:false},
+    {...passed,asset_bytes:false},
+    {...passed,release_identity:null},
+  ]){
+    const report=postPublishVerification(gates);
+    assert.equal(report.status,'PUBLISHED_UNVERIFIED');
+    assert.equal(report.installable,false);
+    assert.equal(report.verification,gates.release_identity===null?'UNKNOWN':'BLOCKED');
+  }
+  assert.equal(postPublishVerification({...passed,published:null}).status,'PUBLICATION_UNKNOWN');
+  assert.equal(postPublishVerification({...passed,published:false}).status,'NOT_PUBLISHED');
 });
 test('matrix requires exact SHA latest attempt and all four completed successful jobs',()=>{
   const run={head_sha:sha,path:'.github/workflows/verify.yml',event:'push',status:'completed',conclusion:'success',run_attempt:2};

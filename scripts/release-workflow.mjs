@@ -8,10 +8,10 @@ import {canonicalJson,validateManifest} from './distribution/contracts.mjs';
 import {REPOSITORY} from './distribution/source.mjs';
 import {finalizeManifest} from './package-release.mjs';
 
-// Deliberately unconfigured. Changing these is a reviewed M8 configuration change,
+// Deliberately unconfigured. Changing these is a reviewed configuration change,
 // not a dispatch input and not evidence that the remote settings exist.
 export const POLICY=Object.freeze({license:'MIT',public_evidence_approval:null,reviewers:[],default_branch:'main',tag_creation_ruleset:null,tag_protection_ruleset:null,publisher_integration_id:null});
-export const ENVIRONMENTS=Object.freeze({candidate:'release-candidate-approval',prepare:'release-prepare',publish:'release-publish'});
+export const ENVIRONMENTS=Object.freeze({approval:'release-approval'});
 const ROOT=path.resolve(fileURLToPath(new URL('..',import.meta.url)));
 const HEX40=/^[0-9a-f]{40}$/,HEX64=/^[0-9a-f]{64}$/,ID=/^[1-9][0-9]*$/;
 const fail=()=>{throw Error('Release gate rejected missing, mismatched or untrusted evidence');};
@@ -40,15 +40,33 @@ export function validateApproval(a,purpose,b,draft=null,assets=null){
   }else if(purpose!=='candidate'||a.accept_ref!==null||a.publish_ref!==null)fail();
   return a;
 }
+export function releasePreflight(gates){
+  if(!gates||typeof gates!=='object'||Array.isArray(gates)||!Object.keys(gates).length||Object.values(gates).some(v=>v!==true&&v!==false&&v!==null))fail();
+  if(!Object.hasOwn(gates,'attestation_capability')||Object.hasOwn(gates,'attestation'))fail();
+  const values=Object.values(gates);
+  const status=values.includes(false)?'BLOCKED':values.some(v=>v!==true)?'UNKNOWN':'READY';
+  return {status,gates:{...gates}};
+}
+export function postPublishVerification(gates){
+  const expected=['asset_bytes','attestation','published','release_identity'];
+  if(!gates||typeof gates!=='object'||Array.isArray(gates)||!equal(Object.keys(gates).sort(),expected))fail();
+  const values=Object.values(gates);
+  if(values.some(v=>v!==true&&v!==false&&v!==null))fail();
+  if(gates.published!==true)return {status:gates.published===false?'NOT_PUBLISHED':'PUBLICATION_UNKNOWN',verification:gates.published===false?'BLOCKED':'UNKNOWN',installable:false,gates:{...gates}};
+  const checks=[gates.release_identity,gates.asset_bytes,gates.attestation];
+  const blocked=checks.includes(false),unknown=checks.includes(null);
+  const verified=!blocked&&!unknown;
+  return {status:verified?'VERIFIED':'PUBLISHED_UNVERIFIED',verification:verified?'READY':blocked?'BLOCKED':'UNKNOWN',installable:verified,gates:{...gates}};
+}
 export function validateConfiguration(config,immutable,environment,branches){
-  if(!config.license||!config.public_evidence_approval||!Array.isArray(config.reviewers)||!config.reviewers.length||immutable?.enabled!==true)fail();
+  if(!config.license||!config.public_evidence_approval||!Array.isArray(config.reviewers)||config.reviewers.length!==1||immutable?.enabled!==true)fail();
   const r=environment?.protection_rules?.find(x=>x.type==='required_reviewers');
-  if(!r||typeof r.prevent_self_review!=='boolean'||!r.reviewers?.length||r.reviewers.some(x=>!config.reviewers.includes(x.reviewer?.login))||environment.deployment_branch_policy?.protected_branches!==false||environment.deployment_branch_policy?.custom_branch_policies!==true||!equal(branches.map(b=>({name:b.name,type:b.type})),[{name:config.default_branch,type:'branch'}]))fail();
-  return {prevent_self_review:r.prevent_self_review,reviewers:r.reviewers.map(x=>x.reviewer.login)};
+  if(!r||r.prevent_self_review!==false||!r.reviewers?.length||!equal(r.reviewers.map(x=>x.reviewer?.login).sort(),[...config.reviewers].sort())||environment.deployment_branch_policy?.protected_branches!==false||environment.deployment_branch_policy?.custom_branch_policies!==true||!equal(branches.map(b=>({name:b.name,type:b.type})),[{name:config.default_branch,type:'branch'}]))fail();
+  return {prevent_self_review:r.prevent_self_review,required_reviewers:r.reviewers.length};
 }
 export function validateRepositoryProtection(branch,creation,protection,publisher){
   const required=['ubuntu-latest','windows-latest'].flatMap(os=>[22,24].map(n=>`verify (${os}, ${n})`));
-  if(branch.enforce_admins?.enabled!==true||!(branch.required_pull_request_reviews?.required_approving_review_count>=1)||branch.required_status_checks?.strict!==true||!required.every(n=>branch.required_status_checks.contexts?.includes(n))||branch.allow_force_pushes?.enabled!==false||branch.allow_deletions?.enabled!==false)fail();
+  if(branch.enforce_admins?.enabled!==true||branch.required_status_checks?.strict!==true||!required.every(n=>branch.required_status_checks.contexts?.includes(n))||branch.allow_force_pushes?.enabled!==false||branch.allow_deletions?.enabled!==false)fail();
   for(const r of [creation,protection])if(r.target!=='tag'||r.enforcement!=='active'||!equal(r.conditions?.ref_name,{include:['refs/tags/v1.2.0'],exclude:[]}))fail();
   if(!Number.isSafeInteger(publisher)||publisher<1||!equal(creation.rules,[{type:'creation'}])||!equal(creation.bypass_actors,[{actor_id:publisher,actor_type:'Integration',bypass_mode:'always'}])||!equal(protection.rules.map(r=>r.type).sort(),['deletion','update'])||!equal(protection.bypass_actors,[]))fail();
 }
@@ -117,13 +135,12 @@ async function configuration(client,purpose){
   if(!POLICY.license||!POLICY.public_evidence_approval)fail();
   const configClient=githubClient(process.env.RELEASE_CONFIG_TOKEN);
   const immutable=await configClient.request('immutable-releases');
-  if(!ENVIRONMENTS[purpose])fail();
-  for(const [phase,name] of Object.entries(ENVIRONMENTS)){
-    const environment=await client.request(`environments/${name}`);
-    const branches=await client.list(`environments/${name}/deployment-branch-policies`,'branch_policies');
-    const observed=validateConfiguration(POLICY,immutable,environment,branches);
-    console.log(JSON.stringify({gate:'environment',phase,name,...observed}));
-  }
+  if(!ENVIRONMENTS.approval)fail();
+  const name=ENVIRONMENTS.approval;
+  const environment=await client.request(`environments/${name}`);
+  const branches=await client.list(`environments/${name}/deployment-branch-policies`,'branch_policies');
+  const observed=validateConfiguration(POLICY,immutable,environment,branches);
+  console.log(JSON.stringify({gate:'owner-approval-environment',name,...observed}));
   const repo=await client.request('');if(String(repo.id)!==REPOSITORY.id||repo.default_branch!==POLICY.default_branch)fail();
   const branch=await configClient.request(`branches/${POLICY.default_branch}/protection`);
   const creation=await configClient.request(`rulesets/${checkId(POLICY.tag_creation_ruleset)}`);
@@ -248,13 +265,22 @@ export async function main(mode){
   await validateFinalFiles(path.join(folder,'published-assets'),candidate,b,id,approval.final_assets);
   if(mode==='verify-published'){
     validatePublication(r,id,b.source_commit,target,approval.final_assets);
-    child('gh',['release','verify','v1.2.0','--repo',REPOSITORY.full_name],folder);
-    for(const name of Object.keys(approval.final_assets))child('gh',['release','verify-asset','v1.2.0',path.join(folder,'published-assets',name),'--repo',REPOSITORY.full_name],folder);
+    try{
+      child('gh',['release','verify','v1.2.0','--repo',REPOSITORY.full_name],folder);
+      for(const name of Object.keys(approval.final_assets))child('gh',['release','verify-asset','v1.2.0',path.join(folder,'published-assets',name),'--repo',REPOSITORY.full_name],folder);
+    }catch{
+      console.log(JSON.stringify(postPublishVerification({published:true,release_identity:true,asset_bytes:true,attestation:null})));
+      throw Error('Post-publish attestation verification failed');
+    }
+    console.log(JSON.stringify(postPublishVerification({published:true,release_identity:true,asset_bytes:true,attestation:true})));
     return;
   }
   if(r.draft!==true)fail();await matrix(client,b.source_commit);
   if(mode==='publish')await client.request(`releases/${id}`,{method:'PATCH',body:{draft:false}});
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  try{if(process.argv.length!==3)fail();await main(process.argv[2]);}catch{console.error('Release workflow blocked: required authenticated evidence or configuration was not verified');process.exitCode=1;}
+  try{if(process.argv.length!==3)fail();await main(process.argv[2]);}catch{
+    if(process.argv[2]==='verify-published')console.log(JSON.stringify(postPublishVerification({published:null,release_identity:null,asset_bytes:null,attestation:null})));
+    console.error('Release workflow blocked: required authenticated evidence or configuration was not verified');process.exitCode=1;
+  }
 }

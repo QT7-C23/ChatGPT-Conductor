@@ -6,9 +6,23 @@
 
 本地 candidate ZIP 不是可安装的 GitHub Release。生产入口仅接受 `github.com/QT7-C23/ChatGPT-Conductor`，仓库 ID `1382745738`；要求精确 Release ID、不可变、非 draft、tag 解引用 commit、发布与每个资产的 GitHub attestation 和原始字节 SHA-256 均通过。不使用 main、latest、自动源码压缩包或任意本地 ZIP。无静默升级，无自动清理。
 
-本地验收平台是 Windows x64 / Node 24；Node 22 与 Linux x64 是声明的运行目标，真实跨平台、实际 GitHub 发布及 M8 验收仍待完成。许可证待所有者选择；依赖 MIT 许可证不等于本项目采用 MIT。
+本地验收平台是 Windows x64 / Node 24；Node 22 与 Linux x64 是声明的运行目标，真实跨平台、实际 GitHub 发布及 M8 验收仍待完成。项目许可证为 MIT；发布证据公开范围及远端发布保护仍须所有者明确配置并预检。
 
 需要 Node 22 或 24，以及真正支持 `gh release verify` / `gh release verify-asset` 的 GitHub CLI。只比较 gh 版本号不足以证明能力。默认解析绝对 host PATH 中的 gh，排除空/相对项和当前目录，按绝对路径从其安装目录运行；不接受 `--gh-bin`、环境测试开关或 manifest 中的命令。发布凭据不会传入候选 verify 子进程。
+
+## V1.2.0 单维护者发布授权
+
+长期发布模型是一位维护者负责审批。无须独立第二 GitHub reviewer；main 的保护目标是禁止 force push/删除、要求 Linux/Windows × Node 22/24 四矩阵 CI，并让日常开发走 feature branch/PR。实际 branch protection 仍是 UNKNOWN，后续需只读预检或人工核对。
+
+发布前 Release Preflight 对每个门禁输出 READY、BLOCKED 或 UNKNOWN。任何已失败的检查为 BLOCKED；branch protection、immutable release 计划/API、attestation verifier 支持等读取不到或尚未证实为 UNKNOWN；只有完整正面证据才是 READY。这里检查的是 attestation 验证能力，不检查尚未发布、尚未生成的 release attestation。UNKNOWN 与 BLOCKED 都停止 Publish。
+
+两次 owner approval 使用一个 `release-approval` 环境：批准候选包后只允许创建 Draft；核验精确 Draft Release ID、tag→commit、manifest、四项资产字节和所有哈希后，再由同一 owner 单独批准 Publish。approval artifact 必须来自受保护 GitHub workflow，并按 run ID、artifact ID 与 archive SHA-256 取回。第一次绑定完整 build evidence、source commit、candidate inventory 和 payload/changelog；第二次另绑定精确 draft ID、candidate evidence、四项资产 SHA-256，以及不同的 ACCEPT 和 Publish 引用。仓库里的文字或普通 JSON 字段无法产生 artifact。tag 只能创建一次；发布步骤还要求目标仍是该精确 Draft，因此不同版本或已发布资产不能通过重放审批。
+
+发布授权只许可该 Release 生命周期动作，不授予任何项目任务的 ExecutionApproval 或 side effect 权限。Chat Review 可作为工程审核证据，但不能代替 GitHub actor 身份。旧 V1.2.0 approval packet 仍使用 schema 1；迁移时重新生成两次 owner approval。helper 仍要求当前 allowlist 恰好只有一个 owner，旧 artifact 只有在当前 owner 身份、远端环境和全部精确身份/摘要验证均通过时才可用，不会被自动升级为新的授权。
+
+发布后状态只有在精确 release identity、全部资产字节及 release/asset attestation 均验证通过时才是 `VERIFIED`。已确认发布但任一检查失败或无法验证时为 `PUBLISHED_UNVERIFIED`，且 `installable=false`；已知摘要/身份不匹配对应 verification=`BLOCKED`，读取或验证服务不可用对应 verification=`UNKNOWN`。无法确认是否已发布时为 `PUBLICATION_UNKNOWN`，仍不可安装；仍是 Draft 时为 `NOT_PUBLISHED`。Release 可能已经公开且不可变，失败时只报告并阻止使用，不自动覆盖或替换资产；修复暂时性验证故障后可重跑 verify。
+
+`PUBLISHED_UNVERIFIED` 禁止 install、update 和 rollback 把该 Release 当作目标。分发源即使在列表中发现它，也必须先通过 `authenticateRelease` 的精确 Release、资产及 attestation 验证才能形成 authenticated bundle；失败不产生可安装 bundle。即使发布 workflow 的验证结果丢失，客户端仍执行这道认证门禁。
 
 ## 首次安全引导
 
