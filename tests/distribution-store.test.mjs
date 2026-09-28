@@ -35,7 +35,14 @@ test('two real child processes contend for one installation namespace',async t=>
   t.after(()=>children.forEach(c=>c.kill()));
   const outcomes=await Promise.all(children.map(c=>new Promise((resolve,reject)=>{c.stdout.once('data',b=>resolve(b.toString().trim()));c.once('error',reject);})));
   assert.deepEqual(outcomes.slice().sort(),['LOCKED','acquired']);
-  await Promise.all(children.map(c=>new Promise(resolve=>{if(c.exitCode!==null)return resolve();c.once('exit',resolve);c.stdin.end('release');})));
+  await Promise.all(children.map((c,i)=>new Promise((resolve,reject)=>{
+    const exited=code=>{try{assert.equal(code,0);resolve();}catch(error){reject(error);}};
+    if(c.exitCode!==null)return exited(c.exitCode);
+    c.once('exit',exited);
+    // The LOCKED contender exits naturally. Writing to its closing stdin races
+    // with the exit notification on Windows and can raise EPIPE.
+    if(outcomes[i]==='acquired'){c.stdin.once('error',reject);c.stdin.end('release');}
+  })));
 });
 
 test('link ancestors are rejected and interrupted JSON replacement retains valid old record',async t=>{
