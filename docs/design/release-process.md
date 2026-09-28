@@ -166,8 +166,8 @@ hashes must match, and the writer requires the Release still to be a draft.
 
 ## Required remote configuration and remaining integration
 
-- MIT is selected; the owner must still approve what evidence may be
-  public. A reviewed policy change records those decisions and authorized users.
+- MIT is selected; the owner's approved public scope is recorded above and in
+  POLICY. Each candidate and exact draft still needs its separate owner decision.
 - Default branch must be `main`; the live gate reads active `main-protection`
   ruleset `24122310`, exact main inclusion, no bypass, PRs with zero required
   approvals, the four checks bound to GitHub Actions Integration `15368`, and
