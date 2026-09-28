@@ -124,15 +124,28 @@ async function build(out,source,commit){
 
 // Every URL comes from fixed repository endpoints. Caller data only enters validated
 // path components; no remote URL, executable, shell fragment or source script input.
+const readOperations=['artifact_download','artifact_metadata','workflow_origin','release_asset','repository_evidence'];
+export function releaseFailureEvidence(error){
+  return {stage:'workflow',status:'BLOCKED',evidence:{operation:readOperations.includes(error?.operation)?error.operation:null,http_status:Number.isInteger(error?.status)&&error.status>=400&&error.status<=599?error.status:null}};
+}
 export function githubClient(token,transport=fetch){
   if(!token)fail();
   async function request(endpoint,{method='GET',body,binary=false,upload=false}={}){
     const base=upload?'https://uploads.github.com':'https://api.github.com';
-    const r=await transport(`${base}/repos/${REPOSITORY.full_name}${endpoint?'/'+endpoint:''}`,{method,signal:AbortSignal.timeout(120000),headers:{Authorization:`Bearer ${token}`,Accept:binary&&method==='GET'?'application/octet-stream':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(body?{'Content-Type':binary?'application/octet-stream':'application/json'}:{})},body:body?(binary?body:JSON.stringify(body)):undefined});
+    const operation=/^actions\/artifacts\/[1-9]\d*\/zip$/.test(endpoint)?'artifact_download':/^actions\/artifacts\/[1-9]\d*$/.test(endpoint)?'artifact_metadata':/^actions\/(runs|workflows)\//.test(endpoint)?'workflow_origin':/^releases\/(assets|[1-9]\d*\/assets)/.test(endpoint)?'release_asset':'repository_evidence';
+    try{
+    // Actions archive downloads use the REST media type before their redirect;
+    // only release-asset GET requests negotiate application/octet-stream.
+    const r=await transport(`${base}/repos/${REPOSITORY.full_name}${endpoint?'/'+endpoint:''}`,{method,signal:AbortSignal.timeout(120000),headers:{Authorization:`Bearer ${token}`,Accept:binary&&method==='GET'&&/^releases\/assets\/[1-9]\d*$/.test(endpoint)?'application/octet-stream':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(body?{'Content-Type':binary?'application/octet-stream':'application/json'}:{})},body:body?(binary?body:JSON.stringify(body)):undefined});
     if(!r.ok){const error=Error('GitHub evidence could not be read');error.name='GitHubReadError';error.status=r.status;throw error;}if(r.status===204)return null;
     if(Number(r.headers.get('content-length')??0)>40*1024*1024)fail();
     const data=Buffer.from(await r.arrayBuffer());if(data.length>40*1024*1024)fail();
     return binary&&method==='GET'?data:JSON.parse(data.toString('utf8'));
+    }catch(error){
+      const failure=Error('GitHub evidence could not be read');failure.name='GitHubReadError';failure.operation=operation;
+      if(Number.isInteger(error?.status)&&error.status>=400&&error.status<=599)failure.status=error.status;
+      throw failure;
+    }
   }
   async function list(endpoint,key){
     const all=[];
@@ -325,7 +338,8 @@ export async function main(mode){
   if(mode==='publish')await client.request(`releases/${id}`,{method:'PATCH',body:{draft:false}});
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  try{if(process.argv.length!==3)fail();await main(process.argv[2]);}catch{
+  try{if(process.argv.length!==3)fail();await main(process.argv[2]);}catch(error){
+    console.log(JSON.stringify(releaseFailureEvidence(error)));
     if(process.argv[2]==='verify-published')console.log(JSON.stringify(postPublishVerification({published:null,release_identity:null,asset_bytes:null,attestation:null})));
     console.error('Release workflow blocked: required authenticated evidence or configuration was not verified');process.exitCode=1;
   }
