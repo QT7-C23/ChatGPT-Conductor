@@ -1,6 +1,6 @@
-# V1.1.2 数据契约
+# 数据契约（schema 2）
 
-项目版本 1.1.2；UTF-8 JSON 使用 **schema_version=2**。运行时契约以 [contracts.mjs](../scripts/contracts.mjs) 为准，未知字段拒绝。模板用于人工填写，不能直接作为 JSON 传给 CLI。旧版迁移见 [migration-v1.1.md](migration-v1.1.md)。
+项目版本以 package.json 为准；UTF-8 JSON 使用 **schema_version=2**。运行时契约以 [contracts.mjs](../scripts/contracts.mjs) 为准，未知字段拒绝。模板用于人工填写，不能直接作为 JSON 传给 CLI。旧版迁移见 [migration-v1.1.md](migration-v1.1.md)。
 
 ## 公共身份
 
@@ -115,3 +115,11 @@ boundary_sha256 覆盖 executor、work_type、goal、scope、inputs、deliverabl
 ## V1.1.2 新执行批准和要求来源
 
 完整字段、精确摘要绑定、旧状态兼容边界和统一 currentRevisionRequirement 语义，以[统一门禁说明](v1.1.2-gates.md)为准。原有顶层状态字段保持不变；新 kind=execution 记录不能由旧 replan 自动获得。REVISE 可附 supersedes_requirement_id 引用当前规划、迁移或 ESCALATE 要求，原 supersedes_review_id 只保留 REVISE 审核链。保留的 ESCALATE 另含运行时派生的 inherited_requirement；原始 Review 输入禁止填写该字段。
+
+## M9 独立交付合同
+
+[DeliveryManifestV1](output-completeness.md) 的正式校验、字符/章节启发式、事件、内容摘要、completion marker、恢复及批准 scope 由 scripts/delivery-manifest.mjs 定义。它只用于预计较长的结构化产物；没有 manifest 的旧 schema-2 项目合法。不得把 manifest/receipt/content approval 塞入 ProjectState、Execution Packet 或迁移批准。内容修订须升 artifact revision 并重新校验 scope；Packet/decision/lifecycle 版本规则不变。来源真实性仍由可信宿主核实。
+
+## M11 可选宿主合同
+
+[MCP Readiness](mcp-readiness.md) 规范可选操作的真实证据、unknown/unsupported、降级与授权边界，复用 M6 runtime overlay 和 M4 policy，不新增核心字段、CLI 或生产 validator。没有 adapter/MCP 的 schema-2 路径保持合法；能力表不授予权限。

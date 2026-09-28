@@ -1,4 +1,5 @@
 // Capability recommendation only. The host supplies assessed facts; this module has no I/O or execution authority.
+import { planDelivery } from './delivery-manifest.mjs';
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { resolveRegistryCandidates } from './model-capability-registry.mjs';
@@ -168,4 +169,14 @@ export function nextCapabilityStep({ tier, reasoning, reasoning_adjustable }) {
   // FRONTIER needs an independently evidenced recommendation; this hint cannot manufacture it.
   if (tier === 'STRONG' || tier === 'FRONTIER') return null;
   return { tier: tiers[Math.min(tiers.indexOf(tier) + 1, tiers.length - 1)], reasoning };
+}
+
+// Ordinary recommendations never enter delivery planning; an explicitly expanded report still needs to be long.
+export function prepareRoutingExplanation({ recommendation, extended = false, sections = [],
+  artifact_id = `routing-${recommendation?.recommendation_id}`, artifact_revision = 1 }) {
+  const compact = compactRecommendation(recommendation, { allow_unresolved_inheritance: true });
+  if (typeof extended !== 'boolean') throw new Error('Contract violation: routing explanation.extended');
+  if (!extended) return { recommendation: compact, delivery: { manifest: null, emissions: [] } };
+  return { recommendation: compact, delivery: planDelivery({ artifact_id, artifact_revision,
+    artifact_kind: 'router_explanation', sections }) };
 }

@@ -67,6 +67,12 @@ JSON 校验把 prepare 时完整任务包的稳定 SHA-256 摘要绑定到活动
 
 带上最新 project-state、Execution Packet、最近 Result Packet、决策变更记录和真实附件。执行者先核对版本，不重复已完成的外部动作。没有完整上下文时只补缺口，不凭记忆推翻决策。引用的历史聊天只提供背景，最新明确用户指令拥有优先权。
 
+长结构化产物按 [Output Completeness](output-completeness.md) 使用独立 DeliveryManifestV1：自然语言续传先核对当前内容身份和可靠交付边界，只补缺段/标记。不可观测的 UI 截断保持 unknown；用户报告会使相关段 incomplete。只批准实际完整可见范围，含糊批准不涵盖未来 Part；交付确认和内容批准都不签发执行权。Delivery 缺失/损坏只要求重建交付计划，不破坏 schema-2 project-state、migration/recovery 或七阶段。
+
 ## V1.1.2 恢复与修订补充
 
 迁移恢复为 PLAN → reauthorize → prepare → start。缺批准的 prepare 返回 PLAN / reauthorization_required；普通 replan 不发放迁移执行资格。当前修订要求同时来自 REVISE、replan/reauthorize 和迁移证据，任何来源都不能因重复 prepare 消失。取消/替换须引用当前要求并批准完整新包，ACCEPT 是完成要求的明确事件；参见 [门禁契约](v1.1.2-gates.md)。
+
+## 功能发现与可选宿主
+
+用户入口与例子统一在 [README](../README.md#先用起来)；自然语言即可请求帮助、强制/跳过 Workshop、解释建议或恢复截断。可选宿主事实按 [MCP Readiness](mcp-readiness.md) 提供，不存在 adapter/MCP 时保留未知并继续不依赖它的路径；它不新增七阶段事件、执行权或副作用权限。

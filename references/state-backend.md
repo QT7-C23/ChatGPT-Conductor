@@ -21,3 +21,5 @@ V1.1.1 还要求原样维护 lifecycle、boundary_sha256、revision_reviews、pl
 V1.1.2 要求原样保存 plan_approvals 中的 kind=execution、approval_id、公共身份和新增 requirement 引用；不能把旧 replan 转成执行批准。currentRevisionRequirement 由既有审计记录统一派生，后端不得删除当前要求来源或改写来源链。状态顶层接口不增加存储依赖。
 
 V1.1.3 的 revision_reviews 同时保留 REVISE 和非空 ESCALATE；ESCALATE 的 inherited_requirement 是路由器派生的来源上下文，须连同原始审核意见原样保存。解决 Challenge 只能更新对应 resolution_ref，不得清理修订历史。旧的当前 ESCALATE 会在成功转换中补入同一历史集合，不新建并行日志。
+
+M11 的其他可选宿主能力见 [MCP Readiness](mcp-readiness.md)。持久化继续沿用本页独立 ProjectStateStore 边界；不再新建并行 StateProvider，也不将 ResourcePolicy、Registry、Eval 或 Delivery 的可选保存塞入权威状态。

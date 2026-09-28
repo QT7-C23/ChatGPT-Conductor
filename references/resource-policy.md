@@ -21,3 +21,5 @@ M3 推荐的 Tier 是可靠性下限。FAST 的合理区间为 FAST–BALANCED�
 `frontier.recommended` 来自 M3 经证据引用校验的推荐；`approved` 仅来自宿主核实的显式批准记录，记录须绑定本次 `recommendation_id`、FRONTIER、`select_model` 操作、资源边界与可信批准引用。引用的真实性由宿主验证。`available` 仅来自宿主实时事实；`selected` 与 `actually_used` 在 M4 始终为 `unknown`，直到未来 adapter 有独立执行证据。每一项都不能推出下一项。FRONTIER 默认需要显式批准；`auto_escalate_model=true` 或 `reserve_frontier=false` 也不使其自动路由。`reserve_frontier` 是是否保留稀缺资源的策略标记，不是批准开关。批准不授予 Packet side effects，不修改 authorization、required_capabilities、七阶段或 `schema_version=2`。
 
 正常紧凑输出沿用 M3 `compactRecommendation`；M4 decision 不包含 token、usage、quota 或精确费用。按需询问真实用量时，宿主只能展示有来源的数据；不可读取即 `unknown`，不能合成数字。此模块不实现 quota API、Registry、模型映射、Failure Attribution、Eval 或新 CLI。策略变动应更新 M3 `basis.policy_digest` 后重新判断继承适用性。
+
+可选 availability/reasoning/switch 观察按 [MCP Readiness](mcp-readiness.md) 接入现有输入。switch_supported 是能力事实，auto_route_authorized 和 frontier_approval 是独立可信授权；能力事实不生成授权。M4 的 AUTO_ADJUST_ALLOWED 也是策略提示，未来宿主执行 reasoning 调整仍需核对有效用户授权及批准范围。

@@ -23,3 +23,5 @@
 M4 的实际 availability、reasoning、switching 和独立批准门禁优先于静态 Registry。M4 `ResourceDecisionV1` 仍由可信宿主 runtime 输入决定是否允许动作；Registry 解析不能授予 `auto_route_authorized` 或 FRONTIER 批准，FRONTIER approved 也不推出 available/selected/actually_used。M5 的 `REGISTRY_STALE`、`REGISTRY_UNKNOWN` 和 `MODEL_UNAVAILABLE` 信号不形成 CAPABILITY_LIMIT；前两者保留未知，后一者属环境/运行能力问题。
 
 全部核心函数本地确定性运行，无网络、额外模型调用、后台刷新或每任务更新要求。可选未来 provider boundary 仅为宿主提供 baseline/local snapshot、runtime observation、按需 refresh request；当前 Skill 路径无需 MCP/server/backend/API client。
+
+[MCP Readiness](mcp-readiness.md) 是可选宿主操作的唯一运行合同入口：直接复用 ModelRuntimeOverlayV1 / loadRegistry，保留证据与会话时效；不新增 Provider 类或 runtime 转换框架。refresh_needed 仅是按需补证据提示，不触发外部请求。

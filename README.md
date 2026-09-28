@@ -37,9 +37,45 @@ node scripts/cli.mjs route examples/replan-request.json
 
 ## 先用起来
 
-### Product Workshop（M2）
+### 用自然语言发现和使用功能
 
-目标、用户或范围尚不清楚时，Conductor 在 DISCUSS/PLAN 中先做轻量发现，每轮优先问一个影响下一步决定的问题；明确的小任务直接走原有快速路径。可以说“先帮我厘清产品需求”或输入 `/workshop` 强制进入，也可以说“需求已定，跳过探索”跳过发现。宿主未注册 slash 命令时，把 `/workshop` 当普通文字表达同一意图。默认交付一页 Product Brief，复杂交接才扩成 PRD；Brief 的推荐和 ready 状态都不构成执行授权。详见 [Workshop 规则](references/workshop.md)。
+先加载 Skill，之后主要用自然语言。统一帮助入口是 **“告诉我 Conductor 可用功能/帮助”**：可发现产品澄清、能力建议与解释、资源偏好、交接审核和截断恢复，不需要记命令表。
+
+Product Workshop 在 DISCUSS/PLAN 中 **AUTO** 介入：目标、目标用户/预期结果、范围或关键产品取舍尚未明确时，先做轻量发现，每轮优先问一个影响下一步的问题。明确的小任务直接进入 PLAN 的快速路径。说“先帮我厘清产品需求”可 **FORCE** 进入，说“需求已定，跳过探索”可 **BYPASS**；跳过发现仍须遵守授权、预检和审核门禁。默认交付简短 **Product Brief**，复杂产品或详细交接才扩成 **PRD**。Brief 的 ready 状态和推荐都不授予执行权。详见 [Workshop 规则](references/workshop.md)。
+
+`/workshop` 是 Skill 语义快捷表达，由 Chat/宿主理解普通文字；本项目没有 Workshop slash parser，也不保证宿主注册或接受 slash 命令。若宿主拦截该输入，使用上面的自然语言即可。`/conductor help`、`/router`、`/router explain` 是历史候选，当前未实现为命令。本地 JSON 校验 CLI 确实存在，供维护与交接校验使用，见下文；它不解释聊天文本。本轮不新增 CLI parser。
+
+### 理解能力建议与资源偏好
+
+**FAST / BALANCED / STRONG / FRONTIER** 是当前任务的能力适配层级，不是模型品牌或质量排行榜；**Capability Need**（需要什么能力）与 **Execution Risk**（失败后果及治理要求）分离。高风险可能需要更多核验，不会仅因风险自动推荐 FRONTIER。正常先给紧凑建议，询问“为什么”时复用已有依据解释。详见 [Adaptive Router](references/adaptive-router.md)。
+
+遇到失败先做 **Failure Attribution**：需求含糊就澄清，缺上下文就补输入，工具/环境问题就恢复预检，测试与 Spec 冲突就核对并回 PLAN，未知就保留 UNKNOWN。只有有证据的 CAPABILITY_LIMIT 才直接支持能力重评；**reasoning-first** 优先考虑当前模型可用的 reasoning 调整，再考虑 Tier 升级。失败或 REVISE 不自动换更贵模型，建议也不执行切换。详见 [失败归因](references/failure-attribution.md)。
+
+资源模式 `economy`、`balanced`、`quality_first` 在合理能力区间内表达节省/均衡/质量偏好，不等于能力 Tier。当前默认候选为 balanced、保留 FRONTIER、允许 reasoning 升级、模型自动升级关闭；这些仍是 **VALIDATION REQUIRED**，未证明最优。可说“用户默认用 economy”“这个项目用 balanced”或“仅本次用 quality_first”；当前任务明确指令覆盖项目偏好，项目覆盖用户默认，但安全、治理与真实 runtime 能力优先。保存偏好须有显式位置和实际宿主能力。**FRONTIER 需要能力证据、解释和明确批准**；偏好或切换支持都不能替代批准。详见 [Resource Policy](references/resource-policy.md)。
+
+Registry 分开 provider 声明、评测证据与 **runtime truth**。静态快照不证明当前可用，过期为 stale，无法核实为 unknown；quota 不可读时就是 unknown，不能猜或填 0。当前 bundled Registry 故意为空，真实模型映射尚待验证。详见 [Registry](references/model-capability-registry.md)。
+
+**Token / resource usage 默认隐藏**，让用户关注交付结果，减少无必要的数字噪声；可说“显示可核实的资源用量”按需查看。有真实来源才展示，不可得就 unknown，不生成 synthetic usage。Routing Eval 默认采用被动、低成本方式复用已有建议、Result 和 Review；仅显式 Eval 或已开启采集时保存，它不是后台 AI monitor，不定时调用其他模型复评。详见 [Routing Eval](references/routing-eval.md)。
+
+### 长输出与宿主能力
+
+长结构化产物自动按语义章节规划 Part/Segment 和完成标记；短回答不强制 manifest。缺内容或精确标记时不能宣称完整。用户报告截断后，从首个未确认缺口续传，保留已确认内容；本地输出完整与 UI visibility 分开，界面可见性可能仍为 unknown。批准只覆盖已完整交付、独立确认的明确内容范围。详见 [Output Completeness](references/output-completeness.md)。
+
+**Skill-first, MCP-ready, not MCP-dependent**：MCP 不是使用前提。缺 adapter 时仍可澄清、规划、给能力建议、审核和恢复；实时可用性/额度/切换未知时如实说明。可选宿主边界见 [MCP Readiness](references/mcp-readiness.md)，本轮只定义合同，不实现 server/backend 或模型切换。
+
+### 五个短例子
+
+| 你可以这样说 | Conductor 的预期响应 |
+|---|---|
+| “我想做个团队排班工具，还没想好给谁用。” | AUTO Workshop，先澄清最影响范围的问题，再形成 Brief。 |
+| “把确认稿的按钮文案改为‘保存’，范围和验收已定。” | 直接 PLAN，核对现有授权后走小任务快速路径。 |
+| “为什么这一步建议 STRONG？有什么限制？” | 用已有依据解释能力需求、风险与未知项。 |
+| “如果建议 FRONTIER，先解释依据，等我明确批准。” | 保留建议；批准、可用、已选择、实际使用分别核实。 |
+| “Part 2 被截断，§60 已完整确认，请从 §61 继续。” | 核对正文和确认记录，从 §61 的缺口续传。 |
+
+### 本分支验证边界
+
+本地合同/行为测试（M9 基线 500/500）证明协议边界，**不是实际模型收益、节省或默认策略最优性的证明**。真实模型映射、Live Calibration/实际节省、host-specific switching/reasoning/quota、真实 UI 运输与并发持久化仍 OPEN / VALIDATION REQUIRED。下一版本号与 V1.2.0 candidate 的 release lineage 仍 OPEN；标题中的既有版本号不宣布下一版发布。后续真实 MCP 阶段须独立 Product/Architecture Review，不会因这些文档自动启用。
 
 不安装也能在当前会话使用：将本目录作为上下文，明确要求读取 SKILL.md 与所需引用文件。
 
@@ -86,6 +122,11 @@ Copy-Item -LiteralPath $skillSource -Destination $skillTarget -Recurse
 |---|---|
 | [SKILL.md](SKILL.md) | Agent 的主入口 |
 | [workflow.md](references/workflow.md) | 分类、状态、决策变更和恢复 |
+| [Workshop](references/workshop.md) / [Adaptive Router](references/adaptive-router.md) | 产品发现、能力建议与运行边界 |
+| [Resource Policy](references/resource-policy.md) / [失败归因](references/failure-attribution.md) | 偏好、批准与失败恢复 |
+| [Registry](references/model-capability-registry.md) / [Routing Eval](references/routing-eval.md) | 离线证据、runtime truth 和被动评测 |
+| [MCP Readiness](references/mcp-readiness.md) | 可选宿主 adapter 合同与无 MCP 降级；无 server 实现 |
+| [Output Completeness](references/output-completeness.md) | 长产物分块、确认、截断续传和批准范围；短回复无 manifest |
 | [Execution Packet](templates/execution-packet.md) | 人工交接模板 |
 | [Result Packet](templates/result-packet.md) | 执行回传模板 |
 | [Chat Review Record](templates/review-record.md) | 最终审核、修订与升级记录 |

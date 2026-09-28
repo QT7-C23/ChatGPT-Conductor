@@ -16,3 +16,11 @@ M6 可用 `resolveRoutingCandidates` 把已校验的抽象推荐映射到 [Regis
 完全相同的绑定、basis、profile、证据引用可继承并记录前一 ID；scope/task/profile、Packet 身份、runtime capability、policy、registry evidence 变化使继承失效。普通措辞和时钟变化不应写入依据摘要。前一记录缺失时重新生成，不猜测批准。`nextCapabilityStep` 只给 reasoning-first 的候选步骤，不触发切换或失败归因。
 
 FRONTIER 只在复杂信号并有宿主提供的能力证据引用时可能成为建议；引用真实性须由宿主核实。记录不含 approved/available/selected/actually_used、实际模型名、隐藏思维链、quota、usage 或合成 token 值。后续由 [ResourcePolicyV1](resource-policy.md) 在 Packet 外作策略决策与 FRONTIER 批准校验。checkpoint 只是判断时机，不增加七阶段的状态或事件。现有授权、Challenge、副作用、迁移与恢复规则继续按 [治理合同](contracts.md) 和 [工作流](workflow.md) 执行。
+
+## 按需长解释（M9）
+
+普通 compactRecommendation 输出继续保持紧凑，不做 delivery planning。prepareRoutingExplanation 默认同样返回无 manifest；只有用户明确要求长 explain/report（extended=true），且已生成的语义 sections 达到长输出阈值，才使用 [DeliveryManifestV1](output-completeness.md)。短解释即便显式展开也不强制 manifest。此附件不改 Recommendation/Packet identity、不重评 Router、不查询模型/额度、不授予执行权。
+
+## 可选宿主输入（M11）
+
+[MCP Readiness](mcp-readiness.md) 定义 runtime facts 的来源和降级映射。缺 adapter 时抽象推荐继续有效；候选解析使用现有离线 Registry，无 overlay 则 runtime unknown。当前 Tier/reasoning 未核实时不调用依赖它们的 M4 动作判断，不填造当前模型；建议与宿主动作保持分离。
