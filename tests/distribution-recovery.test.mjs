@@ -24,7 +24,7 @@ async function requestFor(t) {
   const plan={...i.plan,operation:'update',generation:1,current_release:i.bundle.descriptor,current_files:await inventory(i.plan.active_path),snapshot:{path:`${i.root}/snapshots/update`,capacity_bytes:0},plan_id:'update-plan'};
   const approval={...i.approval,operation:'update',plan_id:plan.plan_id,use_id:'update-once'};
   const managerContents=Object.fromEntries(Object.entries(i.contents).map(([k,v])=>[k,Buffer.from(v).toString('base64')]));
-  const targetContents={...managerContents,'SKILL.md':Buffer.from('---\nname: chatgpt-conductor\nmetadata:\n  version: "1.2.1"\n---\n').toString('base64'),'package.json':Buffer.from(JSON.stringify({name:'chatgpt-conductor',version:'1.2.1',type:'module'})).toString('base64')};
+  const targetContents={...managerContents,'SKILL.md':Buffer.from('---\nname: chatgpt-conductor\nmetadata:\n  version: "1.3.1"\n---\n').toString('base64'),'package.json':Buffer.from(JSON.stringify({name:'chatgpt-conductor',version:'1.3.1',type:'module'})).toString('base64')};
   return {...i,request:{managerRoot:i.managerRoot,plan,approval,managerContents,targetContents}};
 }
 async function run(i,request,kill=false) {
@@ -161,7 +161,7 @@ test('prepublication failure preserves existing cache authority and permits fres
   const {createScopedStore,authenticatedCacheReader}=await import(pathToFileURL(`${i.managerRoot}/scripts/distribution/store.mjs`));
   const contents=i.request.targetContents;
   const zip=await zipBytes(Object.entries(contents).map(([name,body])=>({name:`chatgpt-conductor/${name}`,body:Buffer.from(body,'base64')})));
-  const target=await fixture(t,{zip,sourceFactory:sourceModule.createReleaseSource,mutateRelease:r=>{r.tag_name='v1.2.1';},mutateManifest:m=>{m.version='1.2.1';m.tag='v1.2.1';m.payload.name='chatgpt-conductor-1.2.1.zip';m.upgrade_from=['1.2.0'];m.payload.files=Object.entries(contents).map(([path,b])=>({path,bytes:Buffer.from(b,'base64').length,sha256:fixtureHash(Buffer.from(b,'base64'))}));}});
+  const target=await fixture(t,{zip,sourceFactory:sourceModule.createReleaseSource,mutateRelease:r=>{r.tag_name='v1.3.1';},mutateManifest:m=>{m.version='1.3.1';m.tag='v1.3.1';m.payload.name='chatgpt-conductor-1.3.1.zip';m.upgrade_from=['1.3.0'];m.payload.files=Object.entries(contents).map(([path,b])=>({path,bytes:Buffer.from(b,'base64').length,sha256:fixtureHash(Buffer.from(b,'base64'))}));}});
   const bundle=await target.source.acquirePayload(await target.source.authenticateRelease('123'));
   const plan={...i.request.plan,target_release:bundle.descriptor,changelog:{body:bundle.changelog,sha256:bundle.descriptor.changelog_sha256}};
   const approval={...i.request.approval,plan_sha256:canonicalSha256(plan)};
@@ -184,8 +184,8 @@ for(const phase of ['SUCCEEDED','RESTORED','ABORTED'])test(`P1 R1/R2 premature $
   const i=await requestFor(t),before=await inventory(i.plan.active_path),registry=await fs.readFile(`${i.plan.control_path}/installation.json`);
   assert.equal((await run(i,{...i.request,stopPoint:'action:after-action',stopKind:'move',stopIndex:1},true)).killed,true);
   const j=await setPhase(i,phase);
-  assert.equal(JSON.parse(await fs.readFile(`${i.plan.active_path}/package.json`)).version,'1.2.1');
-  assert.equal(JSON.parse(registry).release.version,'1.2.0');
+  assert.equal(JSON.parse(await fs.readFile(`${i.plan.active_path}/package.json`)).version,'1.3.1');
+  assert.equal(JSON.parse(registry).release.version,'1.3.0');
   const r=publicRecover(i);t.diagnostic(JSON.stringify({phase,exit:r.code,status:r.body.status,lock:await exists(`${i.plan.control_path}/writer.lock`)}));
   assert.equal(r.code,3,r.out);assert.equal(r.body.status,'restored');
   assert.deepEqual(await inventory(i.plan.active_path),before);assert.deepEqual(await fs.readFile(`${i.plan.control_path}/installation.json`),registry);

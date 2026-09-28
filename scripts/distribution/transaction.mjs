@@ -19,7 +19,7 @@ export async function install({plan,approval,bundle,managerBundle,source,store:p
   if (plan.operation !== 'install' || plan.current_release !== null || plan.generation !== 0 || plan.current_files.length) fail('INSTALL_STATE','Initial install requires absent prestate');
   requireAuthenticatedBundle(bundle,{payload:true});
   requireAuthenticatedBundle(managerBundle,{payload:true});
-  if (canonicalSha256(bundle.descriptor) !== canonicalSha256(plan.target_release) || managerBundle.descriptor.version !== '1.2.0') fail('RELEASE_CHANGED','Target or manager identity differs');
+  if (canonicalSha256(bundle.descriptor) !== canonicalSha256(plan.target_release) || managerBundle.descriptor.version !== '1.3.0') fail('RELEASE_CHANGED','Target or manager identity differs');
   const paths = await checkPlanPaths(plan);
   const running = await canonicalPath(fileURLToPath(import.meta.url));
   if (inside(paths.active,running) || inside(paths.target,running)) fail('RUNNER_LOCATION','Use trusted manager handoff outside replaced directories');

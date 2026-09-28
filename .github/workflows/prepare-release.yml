@@ -46,14 +46,13 @@
     "actions": "read"
   },
   "concurrency": {
-    "group": "release-v1.2.0",
+    "group": "release-v1.3.0",
     "cancel-in-progress": false
   },
   "jobs": {
     "check": {
       "if": "${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}",
       "runs-on": "ubuntu-latest",
-      "environment": "release-prepare",
       "permissions": {
         "contents": "read",
         "actions": "read"
@@ -91,6 +90,20 @@
           "working-directory": "candidate-source"
         },
         {
+          "name": "Authenticate dedicated publisher",
+          "id": "publisher",
+          "uses": "actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1",
+          "with": {
+            "client-id": "Iv23liKIJaTalWOI0IwZ",
+            "private-key": "${{ secrets.CONDUCTOR_PUBLISHER_PRIVATE_KEY }}",
+            "owner": "QT7-C23",
+            "repositories": "ChatGPT-Conductor",
+            "permission-contents": "read",
+            "permission-actions": "read",
+            "permission-administration": "read"
+          }
+        },
+        {
           "name": "Gate prepare-check",
           "run": "node scripts/release-workflow.mjs prepare-check",
           "working-directory": "trusted",
@@ -102,8 +115,10 @@
             "APPROVAL_RUN": "${{ inputs.approval_run }}",
             "APPROVAL_ARTIFACT": "${{ inputs.approval_artifact }}",
             "APPROVAL_DIGEST": "${{ inputs.approval_digest }}",
-            "GH_TOKEN": "${{ github.token }}",
-            "RELEASE_CONFIG_TOKEN": "${{ secrets.RELEASE_CONFIG_TOKEN }}"
+            "GH_TOKEN": "${{ steps.publisher.outputs.token }}",
+            "RELEASE_CONFIG_TOKEN": "${{ secrets.RELEASE_CONFIG_TOKEN || steps.publisher.outputs.token }}",
+            "PUBLISHER_INSTALLATION_ID": "${{ steps.publisher.outputs.installation-id }}",
+            "PUBLISHER_SLUG": "${{ steps.publisher.outputs.app-slug }}"
           }
         }
       ]
@@ -111,9 +126,8 @@
     "prepare": {
       "if": "${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}",
       "runs-on": "ubuntu-latest",
-      "environment": "release-prepare",
       "permissions": {
-        "contents": "write",
+        "contents": "read",
         "actions": "read"
       },
       "steps": [
@@ -137,6 +151,20 @@
           "working-directory": "trusted"
         },
         {
+          "name": "Authenticate dedicated publisher",
+          "id": "publisher",
+          "uses": "actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1",
+          "with": {
+            "client-id": "Iv23liKIJaTalWOI0IwZ",
+            "private-key": "${{ secrets.CONDUCTOR_PUBLISHER_PRIVATE_KEY }}",
+            "owner": "QT7-C23",
+            "repositories": "ChatGPT-Conductor",
+            "permission-contents": "write",
+            "permission-actions": "read",
+            "permission-administration": "read"
+          }
+        },
+        {
           "name": "Gate prepare",
           "run": "node scripts/release-workflow.mjs prepare",
           "working-directory": "trusted",
@@ -148,8 +176,10 @@
             "APPROVAL_RUN": "${{ inputs.approval_run }}",
             "APPROVAL_ARTIFACT": "${{ inputs.approval_artifact }}",
             "APPROVAL_DIGEST": "${{ inputs.approval_digest }}",
-            "GH_TOKEN": "${{ github.token }}",
-            "RELEASE_CONFIG_TOKEN": "${{ secrets.RELEASE_CONFIG_TOKEN }}"
+            "GH_TOKEN": "${{ steps.publisher.outputs.token }}",
+            "RELEASE_CONFIG_TOKEN": "${{ secrets.RELEASE_CONFIG_TOKEN || steps.publisher.outputs.token }}",
+            "PUBLISHER_INSTALLATION_ID": "${{ steps.publisher.outputs.installation-id }}",
+            "PUBLISHER_SLUG": "${{ steps.publisher.outputs.app-slug }}"
           }
         },
         {

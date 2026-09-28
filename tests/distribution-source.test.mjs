@@ -15,6 +15,13 @@ test('authentication failure blocks and sanitizes executable output', async t =>
   assert.equal(f.requests.some(r=>r.url.includes('/releases/assets/')),false);
   await assert.rejects(runGh([], {executable:'conductor-nonexistent-gh'}),{code:'AUTHENTICATION_FAILED'});
 });
+test('a published release with failed attestation remains visible but cannot produce an installable bundle',async t=>{
+  const f=await fixture(t,{authFailure:true});
+  assert.equal((await f.source.discover()).releases[0].release_id,'123');
+  await assert.rejects(f.source.authenticateRelease('123'),{code:'AUTHENTICATION_FAILED'});
+  assert.throws(()=>requireAuthenticatedBundle({descriptor:{release_id:'123'}},{payload:true}),{code:'UNAUTHENTICATED_BUNDLE'});
+  assert.equal(f.requests.some(r=>r.url.includes('/releases/assets/')),false);
+});
 test('identity, tag, channel, hash and immutable mismatches fail closed', async t=>{
   for (const options of [{mutateRelease:r=>r.draft=true},{mutateRelease:r=>r.prerelease=true},{mutateManifest:m=>m.source_commit='c'.repeat(40)},{mutateManifest:m=>m.changelog.sha256='c'.repeat(64)}]) {
     const f=await fixture(t,options); await assert.rejects(f.source.authenticateRelease('123'));

@@ -17,7 +17,7 @@ const reject=()=>{throw new Error('Invalid locked package input');};
 export async function packageFiles(root=ROOT){
   root=await canonicalPath(root);
   const list=JSON.parse(await fs.readFile(`${root}/scripts/distribution/product-files.json`,'utf8'));
-  const gateFiles=new Set(['.gitattributes','.github/workflows/package-candidate.yml','.github/workflows/approve-release.yml','.github/workflows/prepare-release.yml','.github/workflows/publish-release.yml','.github/workflows/verify-published.yml','.github/workflows/verify.yml','.githooks/pre-commit',...['.github/workflows/verify.yml','.githooks/pre-commit','.gitignore'].map(p=>`tests/fixtures/v1.1.3/project-orchestrator/${p}`)]);
+  const gateFiles=new Set(['.gitattributes','.github/workflows/package-candidate.yml','.github/workflows/approve-release.yml','.github/workflows/prepare-release.yml','.github/workflows/preflight-release.yml','.github/workflows/publish-release.yml','.github/workflows/verify-published.yml','.github/workflows/verify.yml','.githooks/pre-commit',...['.github/workflows/verify.yml','.githooks/pre-commit','.gitignore'].map(p=>`tests/fixtures/v1.1.3/project-orchestrator/${p}`)]);
   if(!Array.isArray(list)||new Set(list).size!==list.length||list.some(p=>typeof p!=='string'||!/^([A-Za-z0-9_.-]+\/)*[A-Za-z0-9_.-]+$/.test(p)||!gateFiles.has(p)&&p.split('/').some(s=>s==='..'||s.startsWith('.'))||p.startsWith('node_modules/')))reject();
   const runtime=JSON.parse(await fs.readFile(`${root}/scripts/distribution/runtime-files.json`,'utf8'));
   const lock=JSON.parse(await fs.readFile(`${root}/package-lock.json`,'utf8'));
@@ -33,7 +33,7 @@ export async function packageFiles(root=ROOT){
   if(canonicalJson(Object.keys(runtime).sort())!==canonicalJson(list.filter(p=>p.startsWith('node_modules/')).sort()))reject();
   for(const relative of list){const file=await canonicalPath(`${root}/${relative}`);if(file!==`${root}/${relative}`)reject();const s=await fs.lstat(file);if(!s.isFile()||s.isSymbolicLink())reject();const body=await fs.readFile(file);if(relative.startsWith('node_modules/')&&hash(body)!==runtime[relative])reject();files.push({path:relative,bytes:body.length,sha256:hash(body),body});}
   const skill=files.find(f=>f.path==='SKILL.md').body.toString('utf8');
-  if(pkg.name!=='chatgpt-conductor'||pkg.version!=='1.2.0'||!/^name: chatgpt-conductor\r?$/m.test(skill)||!/^  version: ["']?1\.2\.0["']?\r?$/m.test(skill))reject();
+  if(pkg.name!=='chatgpt-conductor'||pkg.version!=='1.3.0'||!/^name: chatgpt-conductor\r?$/m.test(skill)||!/^  version: ["']?1\.3\.0["']?\r?$/m.test(skill))reject();
   return files;
 }
 export async function buildCandidate({out,root=ROOT,sourceCommit=null}){
@@ -42,9 +42,9 @@ export async function buildCandidate({out,root=ROOT,sourceCommit=null}){
   for(const f of files)zip.addBuffer(f.body,`chatgpt-conductor/${f.path}`,{mtime:new Date('2000-01-01T00:00:00Z'),mode:0o100644,compress:true,compressionLevel:9});
   zip.end();const chunks=[];for await(const chunk of zip.outputStream)chunks.push(chunk);const bytes=Buffer.concat(chunks);
   await fs.mkdir(out,{recursive:true});
-  const name='chatgpt-conductor-1.2.0.zip',payloadPath=path.resolve(out,name);
+  const name='chatgpt-conductor-1.3.0.zip',payloadPath=path.resolve(out,name);
   const notes=await fs.readFile(path.join(root,'CHANGELOG.md'));
-  const candidate={kind:'candidate',version:'1.2.0',source_commit:sourceCommit,payload:{name,bytes:bytes.length,sha256:hash(bytes),archive_root:'chatgpt-conductor',files:files.map(({body,...f})=>f)},changelog:{name:'CHANGELOG.md',bytes:notes.length,sha256:hash(notes)}};
+  const candidate={kind:'candidate',version:'1.3.0',source_commit:sourceCommit,payload:{name,bytes:bytes.length,sha256:hash(bytes),archive_root:'chatgpt-conductor',files:files.map(({body,...f})=>f)},changelog:{name:'CHANGELOG.md',bytes:notes.length,sha256:hash(notes)}};
   await fs.writeFile(payloadPath,bytes,{flag:'wx'});await fs.writeFile(path.join(out,'CHANGELOG.md'),notes,{flag:'wx'});
   await fs.writeFile(path.join(out,'payload-inventory.json'),canonicalJson(candidate.payload.files),{flag:'wx'});
   await fs.writeFile(path.join(out,'candidate.json'),canonicalJson(candidate),{flag:'wx'});
@@ -55,7 +55,7 @@ export async function finalizeManifest({candidate,release,out}){
   if(candidate.kind!=='candidate'||!candidate.source_commit||release.source_commit!==candidate.source_commit||!/^\d+$/.test(release.release_id??'')||!['stable','preview'].includes(release.channel)||Object.keys(release).sort().join()!==['channel','release_id','source_commit'].sort().join())reject();
   const folder=path.dirname(candidate.payload_path??reject());
   for(const a of [candidate.payload,candidate.changelog]){const b=await fs.readFile(path.join(folder,a.name));if(b.length!==a.bytes||hash(b)!==a.sha256)reject();}
-  const manifest=validateManifest({manifest_version:1,product:'chatgpt-conductor',version:candidate.version,channel:release.channel,repository:REPOSITORY,tag:`v${candidate.version}`,source_commit:release.source_commit,release_id:release.release_id,skill_id:'chatgpt-conductor',payload:candidate.payload,changelog:candidate.changelog,runtime:{node_majors:[22,24],platforms:['win32-x64','linux-x64'],min_manager_version:'1.2.0'},data_contract:{schema_version:2,profile:'po-1.1.3',read_profiles:['po-1.1.3'],write_profile:'po-1.1.3'},upgrade_from:['1.1.3'],migrations:legacyRoutes(candidate.version),verification:{profile:'conductor-node-verify-v1'},baseline_provenance:null});
+  const manifest=validateManifest({manifest_version:1,product:'chatgpt-conductor',version:candidate.version,channel:release.channel,repository:REPOSITORY,tag:`v${candidate.version}`,source_commit:release.source_commit,release_id:release.release_id,skill_id:'chatgpt-conductor',payload:candidate.payload,changelog:candidate.changelog,runtime:{node_majors:[22,24],platforms:['win32-x64','linux-x64'],min_manager_version:'1.3.0'},data_contract:{schema_version:2,profile:'po-1.1.3',read_profiles:['po-1.1.3'],write_profile:'po-1.1.3'},upgrade_from:['1.1.3'],migrations:legacyRoutes(candidate.version),verification:{profile:'conductor-node-verify-v1'},baseline_provenance:null});
   const raw=canonicalJson(manifest);await fs.mkdir(out,{recursive:true});
   await fs.writeFile(path.join(out,'release-manifest.json'),raw,{flag:'wx'});
   await fs.copyFile(path.join(folder,'CHANGELOG.md'),path.join(out,'CHANGELOG.md'),fs.constants.COPYFILE_EXCL);

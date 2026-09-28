@@ -2,10 +2,10 @@
 name: chatgpt-conductor
 description: 在 Chat、Work、Codex 之间分流项目讨论、策划、执行和审核，生成可搬运的 Execution Packet 与 Result Packet，并保护已锁定决策。用于项目交接、继续项目、审核回传或处理执行分歧；普通问答和无交接需求的小任务无需启动完整流程。
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
-# ChatGPT Conductor V1.2.0
+# ChatGPT Conductor V1.3.0
 
 把用户的项目推进到可验证的结果：Chat 负责讨论、策划、审核；Work 负责通用执行；Codex 负责代码实现。按交付物、当前阶段和实际能力路由，不按模型名称或推测的额度路由。
 

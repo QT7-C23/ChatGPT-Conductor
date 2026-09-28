@@ -98,9 +98,9 @@ export async function planCommand(command,c,source){
 }
 async function acquire(source,descriptor){const b=await source.authenticateRelease(descriptor.release_id);if(canonicalSha256(b.descriptor)!==canonicalSha256(descriptor))fail('RELEASE_CHANGED');return source.acquirePayload(b);}
 async function managerDescriptor(plan,source){
-  if(plan.target_release.version==='1.2.0')return plan.target_release;
-  if(plan.current_release?.version==='1.2.0')return plan.current_release;
-  const list=await source.discover();if(list.status!=='available')fail('SOURCE_UNAVAILABLE');const rows=list.releases.filter(r=>r.tag==='v1.2.0');if(rows.length!==1)fail('MANAGER_IDENTITY');return (await source.authenticateRelease(rows[0].release_id)).descriptor;
+  if(plan.target_release.version==='1.3.0')return plan.target_release;
+  if(plan.current_release?.version==='1.3.0')return plan.current_release;
+  const list=await source.discover();if(list.status!=='available')fail('SOURCE_UNAVAILABLE');const rows=list.releases.filter(r=>r.tag==='v1.3.0');if(rows.length!==1)fail('MANAGER_IDENTITY');return (await source.authenticateRelease(rows[0].release_id)).descriptor;
 }
 // Only authenticated extracted modules execute transactions. Each imported source
 // creates its own opaque capabilities; untrusted request data cannot mint them.

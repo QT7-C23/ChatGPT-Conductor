@@ -23,7 +23,7 @@ async function runReplacement({plan,approval,bundle,managerBundle,currentBundle,
   if(operation!=='update'&&plan.projects.length&&!approval.writers_stopped)fail('WRITERS_ACTIVE','Data maintenance requires stopped writers');
   if(plan.operation!==operation||!plan.current_release||operation==='update'&&(plan.data_change||plan.migration_ids.length)||operation==='migrate'&&!plan.data_change||operation==='rollback'&&plan.migration_ids.length)fail('UPDATE_STATE','Operation requires an explicit supported plan');
   requireAuthenticatedBundle(bundle,{payload:true});requireAuthenticatedBundle(managerBundle,{payload:true});
-  if(canonicalSha256(bundle.descriptor)!==canonicalSha256(plan.target_release)||managerBundle.descriptor.version!=='1.2.0'||operation==='update'&&!bundle.manifest.upgrade_from.includes(plan.current_release.version))fail('UPDATE_ROUTE','Unsupported update or migration route');
+  if(canonicalSha256(bundle.descriptor)!==canonicalSha256(plan.target_release)||managerBundle.descriptor.version!=='1.3.0'||operation==='update'&&!bundle.manifest.upgrade_from.includes(plan.current_release.version))fail('UPDATE_ROUTE','Unsupported update or migration route');
   if(operation==='migrate') {
     const ids=[];
     for(const p of plan.projects.filter(p=>p.profile!=='po-1.1.3')) {

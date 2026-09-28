@@ -64,7 +64,7 @@ test('exact V1.1.3 rollback validates actual data, retains manager and manager u
   await assertInventory(receipt.installation.active_path,old.bundle.manifest.payload.files,{relative:true});
   assert.equal(await exists(i.plan.active_path),false);assert.equal(await exists(`${receipt.manager_path}/scripts/distribution/update.mjs`),true);
   i.managerRoot=receipt.manager_path;
-  const manager=await authenticate(t,i,i.contents,'1.2.0');i.managerBundle=manager.bundle;i.source=manager.source;
+  const manager=await authenticate(t,i,i.contents,'1.3.0');i.managerBundle=manager.bundle;i.source=manager.source;
   // This exact manager bundle has a different upgrade_from field from setup;
   // authenticate the original bytes/manifest through the retained module.
   const sourceModule=await import(pathToFileURL(`${i.managerRoot}/scripts/distribution/source.mjs`));
@@ -73,7 +73,7 @@ test('exact V1.1.3 rollback validates actual data, retains manager and manager u
   i.managerBundle=await sourceModule.restoreAuthenticatedCache({store:storeModule.authenticatedCacheReader({store,control:plan.control_path}),release:i.bundle.descriptor});
   const upgrade=await nextPlan(i,manager.bundle,{operation:'update',id:'after-rollback'});
   const next=await operation(i,'update',upgrade,manager,{source:{recheck:b=>b===manager.bundle?manager.source.recheck(b):Promise.resolve(b)}});
-  assert.equal(next.installation.release.version,'1.2.0');assert.deepEqual(await inventory(i.plan.projects[0].root_path),before);
+  assert.equal(next.installation.release.version,'1.3.0');assert.deepEqual(await inventory(i.plan.projects[0].root_path),before);
 });
 
 async function restoreSetup(t,{fileScope=false,changeBeforeUpgrade=false}={}){

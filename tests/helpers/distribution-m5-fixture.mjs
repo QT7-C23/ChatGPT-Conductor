@@ -13,7 +13,7 @@ export async function authenticate(t,i,contents,version){
   const module=await import(pathToFileURL(`${i.managerRoot}/scripts/distribution/source.mjs`));
   const id=version==='1.1.3'?'project-orchestrator':'chatgpt-conductor';
   const zip=await zipBytes(Object.entries(contents).map(([name,body])=>({name:`${id}/${name}`,body})));
-  const f=await fixture(t,{zip,sourceFactory:module.createReleaseSource,mutateRelease:r=>r.tag_name=`v${version}`,mutateManifest:m=>{m.version=version;m.tag=`v${version}`;m.skill_id=id;m.payload.archive_root=id;m.payload.name=`chatgpt-conductor-${version}.zip`;m.upgrade_from=['1.1.3','1.2.0'];m.payload.files=Object.entries(contents).map(([path,body])=>({path,bytes:Buffer.byteLength(body),sha256:hash(body)}));}});
+  const f=await fixture(t,{zip,sourceFactory:module.createReleaseSource,mutateRelease:r=>r.tag_name=`v${version}`,mutateManifest:m=>{m.version=version;m.tag=`v${version}`;m.skill_id=id;m.payload.archive_root=id;m.payload.name=`chatgpt-conductor-${version}.zip`;m.upgrade_from=['1.1.3','1.3.0'];m.payload.files=Object.entries(contents).map(([path,body])=>({path,bytes:Buffer.byteLength(body),sha256:hash(body)}));}});
   return {bundle:await f.source.acquirePayload(await f.source.authenticateRelease('123')),source:f.source};
 }
 export const approve=plan=>({plan_id:plan.plan_id,plan_sha256:canonicalSha256(plan),operation:plan.operation,install_id:plan.install_id,projects:plan.projects.map(p=>p.project_id),approval_source:'explicit local test',user_approved:true,writers_stopped:true,issued_at:new Date(Date.now()-1000).toISOString(),expires_at:plan.expires_at,use_id:plan.plan_id});
@@ -36,4 +36,4 @@ export async function runChild(i,plan,extra={},kill=false){
   });
 }
 
-export const legacyMigrations=[1,2].map(schema=>({id:`po-legacy-schema${schema}-v1`,from_profile:`po-legacy-schema${schema}`,to_profile:'po-1.1.3',from_software_versions:['1.2.0'],target_software_version:'1.2.0',kind:'legacy-data',handler_id:'po-legacy-snapshot-v1',preconditions:['stopped and reconciled'],state_effect:'DISCUSS stays DISCUSS; all others PLAN',authorization_effect:'no inherited authorization',rollback_mode:'snapshot',impact_summary:'new approved state destination; legacy evidence unchanged'}));
+export const legacyMigrations=[1,2].map(schema=>({id:`po-legacy-schema${schema}-v1`,from_profile:`po-legacy-schema${schema}`,to_profile:'po-1.1.3',from_software_versions:['1.3.0'],target_software_version:'1.3.0',kind:'legacy-data',handler_id:'po-legacy-snapshot-v1',preconditions:['stopped and reconciled'],state_effect:'DISCUSS stays DISCUSS; all others PLAN',authorization_effect:'no inherited authorization',rollback_mode:'snapshot',impact_summary:'new approved state destination; legacy evidence unchanged'}));
